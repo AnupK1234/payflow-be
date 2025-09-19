@@ -1,5 +1,5 @@
 package com.payflow.app.repository;
 
-public class Temp {
+public class VendorRepository {
 
 }
