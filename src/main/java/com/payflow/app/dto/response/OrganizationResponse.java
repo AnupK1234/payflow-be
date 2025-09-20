@@ -9,5 +9,4 @@ public class OrganizationResponse {
 	private String registrationNumber;
 	private String address;
 	private String status;
-	private Boolean isActive;
 }
