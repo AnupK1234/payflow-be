@@ -13,7 +13,7 @@ import com.payflow.app.dto.response.OrganizationResponse;
 import com.payflow.app.entity.Organization;
 import com.payflow.app.entity.User;
 import com.payflow.app.enums.Status;
-import com.payflow.app.exception.ApiException;
+import com.payflow.app.exception.NotFoundException;
 import com.payflow.app.repository.OrganizationRepository;
 import com.payflow.app.repository.UserRepository;
 
@@ -57,14 +57,14 @@ public class OrganizationServiceImpl implements OrganizationService {
 	@Override
 	public OrganizationResponse getById(Long id) {
 		Organization org = organizationRepository.findById(id)
-				.orElseThrow(() -> new ApiException.NotFound("Organization not found with id: " + id));
+				.orElseThrow(() -> new NotFoundException("Organization not found with id: " + id));
 		return toResponse(org);
 	}
 
 	@Override
 	public OrganizationResponse updateOrganization(Long id, UpdateOrganizationRequest req) {
 		Organization org = organizationRepository.findById(id)
-				.orElseThrow(() -> new ApiException.NotFound("Organization not found with id: " + id));
+				.orElseThrow(() -> new NotFoundException("Organization not found with id: " + id));
 
 		if (req.getName() != null)
 			org.setName(req.getName());
@@ -79,14 +79,14 @@ public class OrganizationServiceImpl implements OrganizationService {
 	@Override
 	public void deleteOrganization(Long id) {
 		Organization org = organizationRepository.findById(id)
-				.orElseThrow(() -> new ApiException.NotFound("Organization not found with id: " + id));
+				.orElseThrow(() -> new NotFoundException("Organization not found with id: " + id));
 		organizationRepository.delete(org);
 	}
 
 	@Override
 	public OrganizationResponse verifyOrganization(Long id, boolean approve) {
 		Organization org = organizationRepository.findById(id)
-				.orElseThrow(() -> new ApiException.NotFound("Organization not found with id: " + id));
+				.orElseThrow(() -> new NotFoundException("Organization not found with id: " + id));
 
 		org.setStatus(approve ? Status.VERIFIED : Status.REJECTED);
 		return toResponse(organizationRepository.save(org));
