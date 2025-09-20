@@ -12,6 +12,7 @@ import com.payflow.app.dto.request.UpdateOrganizationRequest;
 import com.payflow.app.dto.response.OrganizationResponse;
 import com.payflow.app.entity.Organization;
 import com.payflow.app.entity.User;
+import com.payflow.app.enums.Role;
 import com.payflow.app.enums.Status;
 import com.payflow.app.exception.NotFoundException;
 import com.payflow.app.repository.OrganizationRepository;
@@ -41,7 +42,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 		org = organizationRepository.save(org);
 
 		User admin = User.builder().username(req.getAdminUsername()).email(req.getAdminEmail())
-				.passwordHash(encoder.encode(req.getTempPassword())).role("ORG_ADMIN").organization(org)
+				.passwordHash(encoder.encode(req.getTempPassword())).role(Role.ORG_ADMIN).organization(org)
 				.mustResetPassword(true).enabled(true).build();
 		userRepository.save(admin);
 		org.setAdminUser(admin);

@@ -1,7 +1,11 @@
 package com.payflow.app.entity;
 
+import com.payflow.app.enums.Role;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -32,11 +36,12 @@ public class User {
 	@Column(nullable = false, unique = true)
 	private String email;
 
-	@Column(nullable = false)
+	@Column(name = "password", nullable = false)
 	private String passwordHash;
 
+	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private String role; // BANK_ADMIN, ORG_ADMIN, EMPLOYEE, VENDOR, CLIENT
+	private Role role; // BANK_ADMIN, ORG_ADMIN, EMPLOYEE, VENDOR, CLIENT
 
 	private Boolean mustResetPassword = false;
 	private Boolean enabled = true;
@@ -56,4 +61,5 @@ public class User {
 	@OneToOne
 	@JoinColumn(name = "client_id")
 	private Client client;
+
 }
