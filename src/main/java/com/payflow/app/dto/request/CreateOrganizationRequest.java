@@ -8,7 +8,11 @@ import lombok.Data;
 public class CreateOrganizationRequest {
 	@NotBlank
 	private String name;
+	
+	@NotBlank
 	private String registrationNumber;
+	
+	@NotBlank
 	private String address;
 
 	@NotBlank
