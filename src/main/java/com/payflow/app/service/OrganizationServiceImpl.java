@@ -30,7 +30,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 	private OrganizationResponse toResponse(Organization org) {
 		OrganizationResponse res = modelMapper.map(org, OrganizationResponse.class);
-		res.setStatus(org.getStatus().name()); // enum to string
+		res.setStatus(org.getStatus().name()); 
 		return res;
 	}
 
