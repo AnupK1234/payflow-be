@@ -8,5 +8,7 @@ public class OrganizationResponse {
 	private String name;
 	private String registrationNumber;
 	private String address;
-	private String status;
+	private String status; // PENDING, VERIFIED, REJECTED
+	private String adminUsername;
+	private String adminEmail;
 }
