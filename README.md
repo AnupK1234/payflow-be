@@ -11,3 +11,8 @@ DB_PASSWORD = your mysql password
 DB_USER = your mysql username
 DB_URL = jdbc:mysql://localhost:3306/payflow?createDatabaseIfNotExist=true
 APP_JWT_SECRET = 024f79e5cb4e467cb87832900ad41b6c
+
+
+
+
+this is written by pragati

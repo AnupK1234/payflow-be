@@ -1,23 +1,12 @@
 package com.payflow.app.entity;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
 @Entity
 @Table(name = "employees")
@@ -27,20 +16,67 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class Employee {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
 
-	private String fullName;
-	private String email;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@ManyToOne
-	@JoinColumn(name = "organization_id")
-	private Organization organization;
+    @NotNull
+    @Column(nullable = false, unique = true, length = 20)
+    private String employeeCode;    
 
-	@OneToOne(mappedBy = "employee", cascade = CascadeType.ALL)
-	private User user;
+    @NotNull
+    @Column(nullable = false, length = 100)
+    private String fullName;
 
-	@OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
-	private List<Document> documents = new ArrayList<>();
+    @NotNull
+    @Email
+    @Column(nullable = false, unique = true, length = 120)
+    private String email;
+
+    @NotNull
+    @Column(nullable = false)
+    private LocalDate dateOfJoining;
+
+    @NotNull
+    @Column(nullable = false, length = 50)
+    private String jobTitle;   // Designation
+
+    @NotNull
+    @Column(nullable = false, length = 50)
+    private String department;
+
+    @NotNull
+    @Column(nullable = false, length = 20)
+    private String status = "Active";  // Active, Resigned, On Leave
+
+    // --- Bank & Compliance ---
+    @Column(length = 30)
+    private String bankAccountNumber;
+
+    @Pattern(regexp = "^[A-Z]{4}0[A-Z0-9]{6}$", message = "Invalid IFSC code")
+    @Column(length = 11)
+    private String ifscCode;
+
+    @Size(min = 12, max = 12, message = "Aadhaar must be 12 digits")
+    @Column(unique = true, length = 12)
+    private String aadhaarNumber;
+
+    @Pattern(regexp = "^[A-Z]{5}[0-9]{4}[A-Z]{1}$", message = "Invalid PAN format")
+    @Column(unique = true, length = 10)
+    private String panNumber;
+
+    // --- Relationships ---
+    @ManyToOne
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
+
+    @OneToOne(mappedBy = "employee", cascade = CascadeType.ALL)
+    private User user;
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Document> documents = new ArrayList<>();
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EmployeeSalaryStructure> salaryStructures = new ArrayList<>();
 }
