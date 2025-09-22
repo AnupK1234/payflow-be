@@ -32,7 +32,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final OrganizationRepository organizationRepository;
     private final ModelMapper modelMapper;
 
-    // ------------------ Employee CRUD ------------------
+   
 
     @Override
     public EmployeeResponseDTO createEmployee(EmployeeRequestDTO req) {
@@ -97,7 +97,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository.deleteById(id);
     }
 
-    // ------------------ Salary Structure ------------------
+    
 
     @Override
     public EmployeeSalaryStructureResponseDTO addSalaryStructure(Long employeeId, EmployeeSalaryStructureRequestDTO req) {
