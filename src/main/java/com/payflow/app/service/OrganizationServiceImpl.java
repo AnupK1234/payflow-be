@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
 
 import com.payflow.app.dto.request.CreateOrganizationRequest;
 import com.payflow.app.dto.request.UpdateOrganizationRequest;
@@ -28,6 +29,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 	private final UserRepository userRepository;
 	private final BCryptPasswordEncoder encoder;
 	private final ModelMapper modelMapper;
+	private final EmailService emailService;
 
 	private OrganizationResponse toResponse(Organization org) {
 		OrganizationResponse res = modelMapper.map(org, OrganizationResponse.class);
@@ -46,6 +48,10 @@ public class OrganizationServiceImpl implements OrganizationService {
 				.mustResetPassword(true).enabled(true).build();
 		userRepository.save(admin);
 		org.setAdminUser(admin);
+		
+		Context context = new Context();
+		context.setVariable("userName", admin.getUsername());
+		emailService.sendEmailWithTemplate(req.getAdminEmail(), "Welcome to Our App!", "account-creation-template.html", context);
 
 		return toResponse(organizationRepository.save(org));
 	}
