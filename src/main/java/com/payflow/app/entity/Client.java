@@ -1,19 +1,8 @@
 package com.payflow.app.entity;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
 @Entity
 @Table(name = "clients")
@@ -23,17 +12,60 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class Client {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
 
-	private String name;
-	private String contactEmail;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@ManyToOne
-	@JoinColumn(name = "organization_id")
-	private Organization organization;
+    
+    @NotNull
+    @Size(max = 100)
+    @Column(nullable = false, length = 100)
+    private String companyName;  
 
-	@OneToOne(mappedBy = "client", cascade = CascadeType.ALL)
-	private User user;
+    @NotNull
+    @Size(max = 100)
+    @Column(nullable = false, length = 100)
+    private String contactPersonName; 
+
+    @NotNull
+    @Email
+    @Size(max = 120)
+    @Column(nullable = false, unique = true, length = 120)
+    private String contactEmail;
+
+    @NotNull
+    @Pattern(regexp = "\\d{10}", message = "Phone number must be 10 digits")
+    @Column(nullable = false, length = 10)
+    private String contactPhone;
+
+    
+    @Column(length = 255)
+    private String address;
+
+    @Column(length = 50)
+    private String city;
+
+    @Column(length = 50)
+    private String state;
+
+    @Column(length = 50)
+    private String country;
+
+    @Column(length = 10)
+    private String postalCode;
+
+
+    @Column(length = 20)
+    private String status = "Active"; 
+
+    
+    @ManyToOne
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
+
+    // Optional login/user details if needed in future
+    
+    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL)
+    private User user;  
 }
