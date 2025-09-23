@@ -1,11 +1,14 @@
 package com.payflow.app.service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.thymeleaf.context.Context;
 
 import com.payflow.app.dto.request.CreateOrganizationRequest;
 import com.payflow.app.dto.request.UpdateOrganizationRequest;
@@ -28,6 +31,9 @@ public class OrganizationServiceImpl implements OrganizationService {
 	private final UserRepository userRepository;
 	private final BCryptPasswordEncoder encoder;
 	private final ModelMapper modelMapper;
+	private final EmailService emailService;
+	private final DocumentService documentService;
+	
 
 	private OrganizationResponse toResponse(Organization org) {
 		OrganizationResponse res = modelMapper.map(org, OrganizationResponse.class);
@@ -36,9 +42,10 @@ public class OrganizationServiceImpl implements OrganizationService {
 	}
 
 	@Override
-	public OrganizationResponse registerOrganization(CreateOrganizationRequest req) {
+	public OrganizationResponse registerOrganization(CreateOrganizationRequest req, List<MultipartFile> documents) throws IOException  {
 		Organization org = Organization.builder().name(req.getName()).registrationNumber(req.getRegistrationNumber())
 				.address(req.getAddress()).status(Status.PENDING).build();
+		
 		org = organizationRepository.save(org);
 
 		User admin = User.builder().username(req.getAdminUsername()).email(req.getAdminEmail())
@@ -46,6 +53,18 @@ public class OrganizationServiceImpl implements OrganizationService {
 				.mustResetPassword(true).enabled(true).build();
 		userRepository.save(admin);
 		org.setAdminUser(admin);
+		
+		// Upload documents
+	    if (documents != null && !documents.isEmpty()) {
+	        int i = 1;
+	        for (MultipartFile file : documents) {
+	            documentService.uploadOrganizationDocument(file, "ORG_PROOF_" + i++, org);
+	        }
+	    }
+		
+		Context context = new Context();
+		context.setVariable("userName", admin.getUsername());
+		emailService.sendEmailWithTemplate(req.getAdminEmail(), "Welcome to Our App!", "account-creation-template.html", context);
 
 		return toResponse(organizationRepository.save(org));
 	}
