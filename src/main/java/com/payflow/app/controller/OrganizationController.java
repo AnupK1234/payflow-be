@@ -1,5 +1,6 @@
 package com.payflow.app.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -12,8 +13,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.payflow.app.dto.request.CreateOrganizationRequest;
 import com.payflow.app.dto.request.UpdateOrganizationRequest;
 import com.payflow.app.dto.response.OrganizationResponse;
@@ -30,9 +34,13 @@ public class OrganizationController {
 	private final OrganizationService organizationService;
 
 	// Public: Organization self-registration
-	@PostMapping("/register")
-	public ResponseEntity<OrganizationResponse> register(@Valid @RequestBody CreateOrganizationRequest req) {
-		return ResponseEntity.ok(organizationService.registerOrganization(req));
+	@PostMapping(value = "/register", consumes = "multipart/form-data")
+	public ResponseEntity<OrganizationResponse> register(@Valid @RequestPart("data") String dataJson,
+			@RequestPart("documents") List<MultipartFile> documents) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+	    CreateOrganizationRequest req = mapper.readValue(dataJson, CreateOrganizationRequest.class);
+		
+		return ResponseEntity.ok(organizationService.registerOrganization(req, documents));
 	}
 
 	// Bank Admin: list all organizations

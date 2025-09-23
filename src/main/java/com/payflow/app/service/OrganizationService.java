@@ -1,6 +1,9 @@
 package com.payflow.app.service;
 
+import java.io.IOException;
 import java.util.List;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import com.payflow.app.dto.request.CreateOrganizationRequest;
 import com.payflow.app.dto.request.UpdateOrganizationRequest;
@@ -8,7 +11,7 @@ import com.payflow.app.dto.response.OrganizationResponse;
 
 public interface OrganizationService {
 
-	OrganizationResponse registerOrganization(CreateOrganizationRequest req);
+	OrganizationResponse registerOrganization(CreateOrganizationRequest req, List<MultipartFile> documents) throws IOException;;
 
 	List<OrganizationResponse> listAll();
 
