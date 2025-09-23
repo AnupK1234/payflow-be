@@ -12,6 +12,7 @@ import org.thymeleaf.context.Context;
 
 import com.payflow.app.dto.request.CreateOrganizationRequest;
 import com.payflow.app.dto.request.UpdateOrganizationRequest;
+import com.payflow.app.dto.response.DocumentResponse;
 import com.payflow.app.dto.response.OrganizationResponse;
 import com.payflow.app.entity.Organization;
 import com.payflow.app.entity.User;
@@ -33,19 +34,27 @@ public class OrganizationServiceImpl implements OrganizationService {
 	private final ModelMapper modelMapper;
 	private final EmailService emailService;
 	private final DocumentService documentService;
-	
 
 	private OrganizationResponse toResponse(Organization org) {
 		OrganizationResponse res = modelMapper.map(org, OrganizationResponse.class);
-		res.setStatus(org.getStatus().name()); 
+		res.setStatus(org.getStatus().name());
+
+		// Map the list of Document entities to DocumentResponse DTOs
+		if (org.getDocuments() != null) {
+			List<DocumentResponse> documentResponses = org.getDocuments().stream()
+					.map(doc -> modelMapper.map(doc, DocumentResponse.class)).collect(Collectors.toList());
+			res.setDocuments(documentResponses);
+		}
+
 		return res;
 	}
 
 	@Override
-	public OrganizationResponse registerOrganization(CreateOrganizationRequest req, List<MultipartFile> documents) throws IOException  {
+	public OrganizationResponse registerOrganization(CreateOrganizationRequest req, List<MultipartFile> documents)
+			throws IOException {
 		Organization org = Organization.builder().name(req.getName()).registrationNumber(req.getRegistrationNumber())
 				.address(req.getAddress()).status(Status.PENDING).build();
-		
+
 		org = organizationRepository.save(org);
 
 		User admin = User.builder().username(req.getAdminUsername()).email(req.getAdminEmail())
@@ -53,18 +62,19 @@ public class OrganizationServiceImpl implements OrganizationService {
 				.mustResetPassword(true).enabled(true).build();
 		userRepository.save(admin);
 		org.setAdminUser(admin);
-		
+
 		// Upload documents
-	    if (documents != null && !documents.isEmpty()) {
-	        int i = 1;
-	        for (MultipartFile file : documents) {
-	            documentService.uploadOrganizationDocument(file, "ORG_PROOF_" + i++, org);
-	        }
-	    }
-		
+		if (documents != null && !documents.isEmpty()) {
+			int i = 1;
+			for (MultipartFile file : documents) {
+				documentService.uploadOrganizationDocument(file, "ORG_PROOF_" + i++, org);
+			}
+		}
+
 		Context context = new Context();
 		context.setVariable("userName", admin.getUsername());
-		emailService.sendEmailWithTemplate(req.getAdminEmail(), "Welcome to Our App!", "account-creation-template.html", context);
+		emailService.sendEmailWithTemplate(req.getAdminEmail(), "Welcome to Our App!", "account-creation-template.html",
+				context);
 
 		return toResponse(organizationRepository.save(org));
 	}

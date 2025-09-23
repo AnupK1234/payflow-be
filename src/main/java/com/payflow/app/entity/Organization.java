@@ -39,7 +39,7 @@ public class Organization {
 
 	@Column(nullable = false, unique = true)
 	private String registrationNumber;
-	
+
 	@Column(nullable = false, unique = true)
 	private String address;
 
