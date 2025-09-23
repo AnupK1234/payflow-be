@@ -12,7 +12,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.payflow.app.dto.request.AuthRequest;
+import com.payflow.app.dto.request.ForgotPasswordRequest;
+import com.payflow.app.dto.request.ResetPasswordRequest;
+import com.payflow.app.dto.request.VerifyOtpRequest;
 import com.payflow.app.security.jwt.JwtService;
+import com.payflow.app.service.PasswordResetService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
 	private final UserDetailsService userDetailsService;
+	private final PasswordResetService passwordResetService;
 
 	private final AuthenticationManager authenticationManager;
 	private final JwtService jwtService;
@@ -37,6 +42,24 @@ public class AuthController {
 
 		return ResponseEntity.ok(
 				new TokenResponse(token, user.getUsername(), user.getAuthorities().iterator().next().getAuthority()));
+	}
+
+	@PostMapping("/forgot-password")
+	public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest req) {
+		passwordResetService.requestPasswordReset(req);
+		return ResponseEntity.ok("Password reset OTP sent to email");
+	}
+
+	@PostMapping("/verify-otp")
+	public ResponseEntity<String> verifyOtp(@RequestBody VerifyOtpRequest req) {
+		boolean valid = passwordResetService.verifyOtp(req);
+		return ResponseEntity.ok(valid ? "OTP valid" : "OTP invalid");
+	}
+
+	@PostMapping("/reset-password")
+	public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest req) {
+		passwordResetService.resetPassword(req);
+		return ResponseEntity.ok("Password successfully reset");
 	}
 
 	record TokenResponse(String token, String username, String role) {
