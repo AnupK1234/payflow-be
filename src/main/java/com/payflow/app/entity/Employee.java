@@ -65,6 +65,9 @@ public class Employee {
     @Pattern(regexp = "^[A-Z]{5}[0-9]{4}[A-Z]{1}$", message = "Invalid PAN format")
     @Column(unique = true, length = 10)
     private String panNumber;
+    
+    @NotNull
+    private Boolean isDeleted = false;
 
     // --- Relationships ---
     @ManyToOne
