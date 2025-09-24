@@ -11,7 +11,6 @@ import lombok.*;
 @Builder
 public class EmployeeSalaryStructureRequestDTO {
 
-    private Long id;
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
     private BigDecimal basic;

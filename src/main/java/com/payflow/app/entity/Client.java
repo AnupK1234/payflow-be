@@ -58,6 +58,9 @@ public class Client {
 
     @Column(length = 20)
     private String status = "Active"; 
+    
+    @NotNull
+    private Boolean isDeleted = false;
 
     
     @ManyToOne
