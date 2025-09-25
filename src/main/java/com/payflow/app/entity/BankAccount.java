@@ -47,4 +47,8 @@ public class BankAccount {
     // Status: ACTIVE, INACTIVE
     @Column(name = "status", nullable = false, length = 20)
     private String status = "ACTIVE";
+    
+    private Integer balance =0;
+    
+    
 }

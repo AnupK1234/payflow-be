@@ -18,4 +18,7 @@ public class BankAccountRequestDTO {
 
     @NotBlank
     private String status; 
+    
+    
+    
 }

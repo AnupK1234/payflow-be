@@ -16,6 +16,9 @@ import java.time.LocalDate;
 @Builder
 public class EmployeeSalaryStructureResponseDTO {
 
+	
+	private Long employeeId;
+	private String employeeName;
     private Long id;
     private BigDecimal basic; // Base salary
     private BigDecimal hra;   // House rent allowance
@@ -26,6 +29,5 @@ public class EmployeeSalaryStructureResponseDTO {
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
 
-    private Long employeeId;
-    private String employeeName;
+   
 }
