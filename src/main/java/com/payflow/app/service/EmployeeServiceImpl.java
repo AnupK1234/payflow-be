@@ -3,17 +3,20 @@ package com.payflow.app.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.modelmapper.ModelMapper;
 
 import com.payflow.app.dto.request.EmployeeRequestDTO;
 import com.payflow.app.dto.request.EmployeeSalaryStructureRequestDTO;
+import com.payflow.app.dto.response.BankAccountResponseDTO;
 import com.payflow.app.dto.response.EmployeeResponseDTO;
 import com.payflow.app.dto.response.EmployeeSalaryStructureResponseDTO;
+import com.payflow.app.entity.BankAccount;
 import com.payflow.app.entity.Employee;
 import com.payflow.app.entity.EmployeeSalaryStructure;
 import com.payflow.app.entity.Organization;
+import com.payflow.app.enums.Role;
 import com.payflow.app.exception.NotFoundException;
 import com.payflow.app.repository.EmployeeRepository;
 import com.payflow.app.repository.EmployeeSalaryStructureRepository;
@@ -26,94 +29,159 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class EmployeeServiceImpl implements EmployeeService {
 
-	private final EmployeeRepository employeeRepository;
-	private final EmployeeSalaryStructureRepository salaryStructureRepository;
-	private final OrganizationRepository organizationRepository;
-	private final ModelMapper modelMapper;
+    private final EmployeeRepository employeeRepository;
+    private final EmployeeSalaryStructureRepository salaryStructureRepository;
+    private final OrganizationRepository organizationRepository;
+    private final ModelMapper modelMapper;
 
-	@Override
-	public EmployeeResponseDTO createEmployee(EmployeeRequestDTO req) {
-		Employee employee = modelMapper.map(req, Employee.class);
-		employee.setId(null); // Ensure Hibernate treats it as new
-		Organization org = organizationRepository.findById(req.getOrganizationId())
-				.orElseThrow(() -> new NotFoundException("Organization not found with id: " + req.getOrganizationId()));
-		employee.setOrganization(org);
-		employee = employeeRepository.save(employee);
-		return modelMapper.map(employee, EmployeeResponseDTO.class);
-	}
+    // ------------------ Employee CRUD ------------------
 
-	@Override
-	public List<EmployeeResponseDTO> getAllEmployees() {
-		return employeeRepository.findAll().stream().map(emp -> modelMapper.map(emp, EmployeeResponseDTO.class))
-				.collect(Collectors.toList());
-	}
+    @Override
+    public EmployeeResponseDTO createEmployee(EmployeeRequestDTO req) {
+        // 1️⃣ Map EmployeeRequestDTO to Employee
+        Employee employee = modelMapper.map(req, Employee.class);
+        employee.setId(null); // ensure Hibernate treats it as new
 
-	@Override
-	public EmployeeResponseDTO getEmployeeById(Long id) {
-		Employee employee = employeeRepository.findById(id)
-				.orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
-		return modelMapper.map(employee, EmployeeResponseDTO.class);
-	}
+        // 2️⃣ Set organization
+        Organization org = organizationRepository.findById(req.getOrganizationId())
+                .orElseThrow(() -> new NotFoundException(
+                        "Organization not found with id: " + req.getOrganizationId()));
+        employee.setOrganization(org);
 
-	@Override
-	public EmployeeResponseDTO updateEmployee(Long id, EmployeeRequestDTO req) {
-		Employee employee = employeeRepository.findById(id)
-				.orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
+        // 3️⃣ Handle bank account
+        if (req.getBankAccount() != null) {
+            BankAccount bankAccount = BankAccount.builder()
+                    .employee(employee) // link to employee
+                    .ownerType(Role.EMPLOYEE) // owner type
+                    .accountNumberEnc(req.getBankAccount().getAccountNumber()) // store directly or encrypt
+                    .ifsc(req.getBankAccount().getIfsc())
+                    .status("ACTIVE")
+                    .build();
 
-		// Update only fields, not collections
-		employee.setFullName(req.getFullName());
-		employee.setEmail(req.getEmail());
-		employee.setEmployeeCode(req.getEmployeeCode());
-		employee.setDateOfJoining(req.getDateOfJoining());
-		employee.setJobTitle(req.getJobTitle());
-		employee.setDepartment(req.getDepartment());
-		employee.setStatus(req.getStatus());
-		employee.setBankAccountNumber(req.getBankAccountNumber());
-		employee.setIfscCode(req.getIfscCode());
-		employee.setAadhaarNumber(req.getAadhaarNumber());
-		employee.setPanNumber(req.getPanNumber());
+            // Initialize employee's bank accounts list
+            employee.setBankAccounts(List.of(bankAccount));
+        }
 
-		// Update organization if changed
-		if (!employee.getOrganization().getId().equals(req.getOrganizationId())) {
-			Organization org = organizationRepository.findById(req.getOrganizationId()).orElseThrow(
-					() -> new NotFoundException("Organization not found with id: " + req.getOrganizationId()));
-			employee.setOrganization(org);
-		}
+        // 4️⃣ Save employee (cascades bank account)
+        employee = employeeRepository.save(employee);
 
-		employee = employeeRepository.save(employee);
-		return modelMapper.map(employee, EmployeeResponseDTO.class);
-	}
+        // 5️⃣ Map to response DTO
+        return modelMapper.map(employee, EmployeeResponseDTO.class);
+    }
 
-	@Override
-	public void deleteEmployee(Long id) {
-		Employee employee = employeeRepository.findById(id)
-				.orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
+    @Override
+    public EmployeeResponseDTO updateEmployee(Long id, EmployeeRequestDTO req) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
 
-		employee.setIsDeleted(true);
-		employeeRepository.save(employee);
-	}
+        // Map flat fields
+        modelMapper.map(req, employee);
 
-	@Override
-	public EmployeeSalaryStructureResponseDTO addSalaryStructure(Long employeeId,
-			EmployeeSalaryStructureRequestDTO req) {
-		Employee employee = employeeRepository.findById(employeeId)
-				.orElseThrow(() -> new NotFoundException("Employee not found with id: " + employeeId));
+        // Update organization if changed
+        if (!employee.getOrganization().getId().equals(req.getOrganizationId())) {
+            Organization org = organizationRepository.findById(req.getOrganizationId())
+                    .orElseThrow(() -> new NotFoundException(
+                            "Organization not found with id: " + req.getOrganizationId()));
+            employee.setOrganization(org);
+        }
 
-		EmployeeSalaryStructure structure = modelMapper.map(req, EmployeeSalaryStructure.class);
-		structure.setEmployee(employee);
+        // Handle bank account update
+        if (req.getBankAccount() != null && req.getBankAccount().getAccountNumber() != null) {
+            // Mark old accounts as INACTIVE
+            employee.getBankAccounts().forEach(acc -> acc.setStatus("INACTIVE"));
 
-		structure = salaryStructureRepository.save(structure);
-		return modelMapper.map(structure, EmployeeSalaryStructureResponseDTO.class);
-	}
+            // Add new bank account
+            BankAccount bankAccount = BankAccount.builder()
+                    .employee(employee)
+                    .ownerType(Role.EMPLOYEE)
+                    .accountNumberEnc(encrypt(req.getBankAccount().getAccountNumber()))
+                    .ifsc(req.getBankAccount().getIfsc())
+                    .status("ACTIVE")
+                    .build();
+            employee.getBankAccounts().add(bankAccount);
+        }
 
-	@Override
-	public List<EmployeeSalaryStructureResponseDTO> getSalaryStructures(Long employeeId) {
-		if (!employeeRepository.existsById(employeeId)) {
-			throw new NotFoundException("Employee not found with id: " + employeeId);
-		}
+        employee = employeeRepository.save(employee);
+        EmployeeResponseDTO response = modelMapper.map(employee, EmployeeResponseDTO.class);
+        mapActiveBankAccountToResponse(employee, response);
+        return response;
+    }
 
-		return salaryStructureRepository.findByEmployeeId(employeeId).stream()
-				.map(struct -> modelMapper.map(struct, EmployeeSalaryStructureResponseDTO.class))
-				.collect(Collectors.toList());
-	}
+    @Override
+    public List<EmployeeResponseDTO> getAllEmployees() {
+        return employeeRepository.findAll()
+                .stream()
+                .map(emp -> {
+                    EmployeeResponseDTO dto = modelMapper.map(emp, EmployeeResponseDTO.class);
+                    mapActiveBankAccountToResponse(emp, dto);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public EmployeeResponseDTO getEmployeeById(Long id) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
+        EmployeeResponseDTO dto = modelMapper.map(employee, EmployeeResponseDTO.class);
+        mapActiveBankAccountToResponse(employee, dto);
+        return dto;
+    }
+
+    @Override
+    public void deleteEmployee(Long id) {
+        if (!employeeRepository.existsById(id)) {
+            throw new NotFoundException("Employee not found with id: " + id);
+        }
+        employeeRepository.deleteById(id);
+    }
+
+    // ------------------ Salary Structures ------------------
+
+    @Override
+    public EmployeeSalaryStructureResponseDTO addSalaryStructure(Long employeeId,
+            EmployeeSalaryStructureRequestDTO req) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new NotFoundException("Employee not found with id: " + employeeId));
+
+        EmployeeSalaryStructure structure = modelMapper.map(req, EmployeeSalaryStructure.class);
+        structure.setEmployee(employee);
+
+        structure = salaryStructureRepository.save(structure);
+        return modelMapper.map(structure, EmployeeSalaryStructureResponseDTO.class);
+    }
+
+    @Override
+    public List<EmployeeSalaryStructureResponseDTO> getSalaryStructures(Long employeeId) {
+        if (!employeeRepository.existsById(employeeId)) {
+            throw new NotFoundException("Employee not found with id: " + employeeId);
+        }
+        return salaryStructureRepository.findByEmployeeId(employeeId)
+                .stream()
+                .map(struct -> modelMapper.map(struct, EmployeeSalaryStructureResponseDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    // ------------------ Helper Methods ------------------
+
+    private void mapActiveBankAccountToResponse(Employee employee, EmployeeResponseDTO response) {
+        employee.getBankAccounts().stream()
+                .filter(acc -> "ACTIVE".equals(acc.getStatus()))
+                .findFirst()
+                .ifPresent(ba -> response.setBankAccount(
+                        BankAccountResponseDTO.builder()
+                                .accountNumber(decrypt(ba.getAccountNumberEnc()))
+                                .ifsc(ba.getIfsc())
+                                .status(ba.getStatus())
+                                .build()
+                ));
+    }
+
+    private String encrypt(String plain) {
+        return plain; // TODO: implement real encryption
+    }
+
+    private String decrypt(String enc) {
+        return enc; // TODO: implement real decryption
+    }
 }

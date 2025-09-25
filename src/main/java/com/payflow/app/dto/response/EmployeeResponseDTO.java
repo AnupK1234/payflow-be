@@ -27,5 +27,6 @@ public class EmployeeResponseDTO {
     private String panNumber;
     private String organizationName; 
     private List<EmployeeSalaryStructureRequestDTO> salaryStructures; 
+    private BankAccountResponseDTO bankAccount;
     
 }

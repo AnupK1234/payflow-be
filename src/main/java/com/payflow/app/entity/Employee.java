@@ -40,7 +40,7 @@ public class Employee {
 
     @NotNull
     @Column(nullable = false, length = 50)
-    private String jobTitle;   // Designation
+    private String jobTitle;
 
     @NotNull
     @Column(nullable = false, length = 50)
@@ -48,15 +48,7 @@ public class Employee {
 
     @NotNull
     @Column(nullable = false, length = 20)
-    private String status = "Active";  // Active, Resigned, On Leave
-
-    // --- Bank & Compliance ---
-    @Column(length = 30)
-    private String bankAccountNumber;
-
-    @Pattern(regexp = "^[A-Z]{4}0[A-Z0-9]{6}$", message = "Invalid IFSC code")
-    @Column(length = 11)
-    private String ifscCode;
+    private String status = "Active";
 
     @Size(min = 12, max = 12, message = "Aadhaar must be 12 digits")
     @Column(unique = true, length = 12)
@@ -65,7 +57,7 @@ public class Employee {
     @Pattern(regexp = "^[A-Z]{5}[0-9]{4}[A-Z]{1}$", message = "Invalid PAN format")
     @Column(unique = true, length = 10)
     private String panNumber;
-    
+
     @NotNull
     private Boolean isDeleted = false;
 
@@ -82,4 +74,8 @@ public class Employee {
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EmployeeSalaryStructure> salaryStructures = new ArrayList<>();
+
+    // ✅ Add this for multiple bank accounts
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BankAccount> bankAccounts = new ArrayList<>();
 }
