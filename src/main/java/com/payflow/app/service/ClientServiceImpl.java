@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,9 +12,12 @@ import com.payflow.app.dto.request.ClientRequestDTO;
 import com.payflow.app.dto.response.ClientResponseDTO;
 import com.payflow.app.entity.Client;
 import com.payflow.app.entity.Organization;
+import com.payflow.app.entity.User;
+import com.payflow.app.enums.Role;
 import com.payflow.app.exception.NotFoundException;
 import com.payflow.app.repository.ClientRepository;
 import com.payflow.app.repository.OrganizationRepository;
+import com.payflow.app.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +29,8 @@ public class ClientServiceImpl implements ClientService {
 	private final ClientRepository clientRepository;
 	private final OrganizationRepository organizationRepository;
 	private final ModelMapper modelMapper;
+	private final UserRepository userRepository;
+	private final BCryptPasswordEncoder encoder;
 
 	@Override
 	public ClientResponseDTO createClient(ClientRequestDTO req) {
@@ -36,6 +42,15 @@ public class ClientServiceImpl implements ClientService {
 		client.setOrganization(org);
 
 		client = clientRepository.save(client);
+
+		// create user row
+		User clientUser = User.builder().username(client.getContactEmail()) // default username of client will be his
+																			// emailid
+				.email(client.getContactEmail()).passwordHash(encoder.encode(client.getContactEmail() + "123"))
+				.role(Role.CLIENT).client(client).mustResetPassword(true).enabled(true).build();
+
+		userRepository.save(clientUser);
+
 		return modelMapper.map(client, ClientResponseDTO.class);
 	}
 
