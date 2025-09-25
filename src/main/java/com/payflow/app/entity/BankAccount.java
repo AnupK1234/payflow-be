@@ -44,7 +44,9 @@ public class BankAccount {
     @Column(name = "status", nullable = false, length = 20)
     private String status = "ACTIVE";
     
-    private Integer balance = 0;
+    @Builder.Default
+    private Double balance = 0.0;
+
     
     
 }
