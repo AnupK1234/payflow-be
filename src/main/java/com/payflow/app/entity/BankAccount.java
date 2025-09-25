@@ -32,13 +32,13 @@ public class BankAccount {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organization_id", nullable = true)
     private Organization organization;
-
     
-
+    
     // Encrypted account number
     @Column(name = "account_number_enc", nullable = false, length = 100)
     private String accountNumberEnc;
 
+    
     // IFSC code
     @Pattern(regexp = "^[A-Z]{4}0[A-Z0-9]{6}$", message = "Invalid IFSC code")
     @Column(name = "ifsc", nullable = false, length = 11)
@@ -48,7 +48,9 @@ public class BankAccount {
     @Column(name = "status", nullable = false, length = 20)
     private String status = "ACTIVE";
     
-    private Integer balance =0;
+    @Builder.Default
+    private Double balance = 0.0;
+
     
     
 }
