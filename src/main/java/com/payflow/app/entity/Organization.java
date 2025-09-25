@@ -30,35 +30,37 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class Organization {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@Column(nullable = false, unique = true)
-	private String name;
+    @Column(nullable = false, unique = true)
+    private String name;
 
-	@Column(nullable = false, unique = true)
-	private String registrationNumber;
+    @Column(nullable = false, unique = true)
+    private String registrationNumber;
 
-	@Column(nullable = false, unique = true)
-	private String address;
+    @Column(nullable = false, unique = true)
+    private String address;
 
-	@Enumerated(EnumType.STRING)
-	private Status status = Status.PENDING;
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.PENDING;
 
-	@OneToOne(mappedBy = "organization", cascade = CascadeType.ALL)
-	private User adminUser;
+    @OneToOne(mappedBy = "organization", cascade = CascadeType.ALL)
+    private User adminUser;
 
-	@OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
-	private List<Employee> employees = new ArrayList<>();
+    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BankAccount> bankAccounts = new ArrayList<>();
 
-	@OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
-	private List<Vendor> vendors = new ArrayList<>();
+    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
+    private List<Employee> employees = new ArrayList<>();
 
-	@OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
-	private List<Client> clients = new ArrayList<>();
+    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
+    private List<Vendor> vendors = new ArrayList<>();
 
-	@OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
-	private List<Document> documents = new ArrayList<>();
+    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
+    private List<Client> clients = new ArrayList<>();
 
+    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
+    private List<Document> documents = new ArrayList<>();
 }

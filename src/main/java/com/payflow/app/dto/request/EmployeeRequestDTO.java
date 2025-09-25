@@ -2,6 +2,7 @@ package com.payflow.app.dto.request;
 
 import java.time.LocalDate;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -33,10 +34,7 @@ public class EmployeeRequestDTO {
     @NotBlank
     private String status; 
 
-    private String bankAccountNumber;
-
-    @Pattern(regexp = "^[A-Z]{4}0[A-Z0-9]{6}$", message = "Invalid IFSC code")
-    private String ifscCode;
+  
 
     @Size(min = 12, max = 12)
     private String aadhaarNumber;
@@ -45,5 +43,8 @@ public class EmployeeRequestDTO {
     private String panNumber;
 
     @NotNull
-    private Long organizationId;  
+    private Long organizationId; 
+    
+    @Valid
+    private BankAccountRequestDTO bankAccount;   
 }
