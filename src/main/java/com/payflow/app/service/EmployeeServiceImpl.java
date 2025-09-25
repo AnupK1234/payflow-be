@@ -3,6 +3,7 @@ package com.payflow.app.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
@@ -16,11 +17,13 @@ import com.payflow.app.entity.BankAccount;
 import com.payflow.app.entity.Employee;
 import com.payflow.app.entity.EmployeeSalaryStructure;
 import com.payflow.app.entity.Organization;
+import com.payflow.app.entity.User;
 import com.payflow.app.enums.Role;
 import com.payflow.app.exception.NotFoundException;
 import com.payflow.app.repository.EmployeeRepository;
 import com.payflow.app.repository.EmployeeSalaryStructureRepository;
 import com.payflow.app.repository.OrganizationRepository;
+import com.payflow.app.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,9 +36,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeSalaryStructureRepository salaryStructureRepository;
     private final OrganizationRepository organizationRepository;
     private final ModelMapper modelMapper;
-
-    // ------------------ Employee CRUD ------------------
-
+    private final UserRepository userRepository;
+    private final BCryptPasswordEncoder encoder;
+    
+    
     @Override
     public EmployeeResponseDTO createEmployee(EmployeeRequestDTO req) {
         // 1️⃣ Map EmployeeRequestDTO to Employee
@@ -64,6 +68,20 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         // 4️⃣ Save employee (cascades bank account)
         employee = employeeRepository.save(employee);
+       
+
+        User user = User.builder()
+            .username(employee.getEmployeeCode())
+            .email(employee.getEmail())
+            .passwordHash(encoder.encode(employee.getEmployeeCode() + "123"))
+            .role(Role.EMPLOYEE)
+            .employee(employee) 
+            .mustResetPassword(true)
+            .enabled(true)
+            .build();
+
+        userRepository.save(user);
+
 
         // 5️⃣ Map to response DTO
         return modelMapper.map(employee, EmployeeResponseDTO.class);
