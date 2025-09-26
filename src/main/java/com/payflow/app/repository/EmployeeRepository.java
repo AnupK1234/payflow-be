@@ -8,5 +8,6 @@ import com.payflow.app.entity.Employee;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 	List<Employee> findByOrganizationIdAndIsDeletedFalse(Long organizationId);
+	List<Employee> findByIsDeletedFalse();
 
 }

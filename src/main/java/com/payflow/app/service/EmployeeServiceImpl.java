@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
 
-import com.payflow.app.dto.request.EmployeeRequestDTO;
+import com.payflow.app.dto.request.CreateEmployeeRequestDTO;
 import com.payflow.app.dto.request.EmployeeSalaryStructureRequestDTO;
 import com.payflow.app.dto.response.BankAccountResponseDTO;
 import com.payflow.app.dto.response.EmployeeResponseDTO;
@@ -41,7 +41,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     
     
     @Override
-    public EmployeeResponseDTO createEmployee(EmployeeRequestDTO req) {
+    public EmployeeResponseDTO createEmployee(CreateEmployeeRequestDTO req) {
         // 1️⃣ Map EmployeeRequestDTO to Employee
         Employee employee = modelMapper.map(req, Employee.class);
         employee.setId(null); // ensure Hibernate treats it as new
@@ -82,20 +82,16 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         userRepository.save(user);
 
-
-        // 5️⃣ Map to response DTO
         return modelMapper.map(employee, EmployeeResponseDTO.class);
     }
 
     @Override
-    public EmployeeResponseDTO updateEmployee(Long id, EmployeeRequestDTO req) {
+    public EmployeeResponseDTO updateEmployee(Long id, CreateEmployeeRequestDTO req) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
 
-        // Map flat fields
         modelMapper.map(req, employee);
 
-        // Update organization if changed
         if (!employee.getOrganization().getId().equals(req.getOrganizationId())) {
             Organization org = organizationRepository.findById(req.getOrganizationId())
                     .orElseThrow(() -> new NotFoundException(
@@ -108,7 +104,6 @@ public class EmployeeServiceImpl implements EmployeeService {
             // Mark old accounts as INACTIVE
             employee.getBankAccounts().forEach(acc -> acc.setStatus("INACTIVE"));
 
-            // Add new bank account
             BankAccount bankAccount = BankAccount.builder()
                     .employee(employee)
                     .ownerType(Role.EMPLOYEE)

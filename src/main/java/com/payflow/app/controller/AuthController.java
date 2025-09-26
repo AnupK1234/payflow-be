@@ -18,11 +18,14 @@ import com.payflow.app.dto.request.VerifyOtpRequest;
 import com.payflow.app.security.jwt.JwtService;
 import com.payflow.app.service.PasswordResetService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Handles user authentication, password reset, and OTP verification processes. This includes login, password reset, OTP verification, and password resetting functionalities.")
 public class AuthController {
 
 	private final UserDetailsService userDetailsService;
@@ -32,6 +35,7 @@ public class AuthController {
 	private final JwtService jwtService;
 
 	@PostMapping("/login")
+	@Operation(summary = "Login user", description = "Authenticates a user with username and password and returns a JWT token for future requests.")
 	public ResponseEntity<?> login(@RequestBody AuthRequest request) {
 		Authentication auth = authenticationManager
 				.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
@@ -45,18 +49,21 @@ public class AuthController {
 	}
 
 	@PostMapping("/forgot-password")
+	@Operation(summary = "Forgot password", description = "Requests a password reset by sending a One-Time Password (OTP) to the user's email address.")
 	public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest req) {
 		passwordResetService.requestPasswordReset(req);
 		return ResponseEntity.ok("Password reset OTP sent to email");
 	}
 
 	@PostMapping("/verify-otp")
+	@Operation(summary = "Verify OTP", description = "Verifies the OTP sent to the user's email address for password reset.")
 	public ResponseEntity<String> verifyOtp(@RequestBody VerifyOtpRequest req) {
 		boolean valid = passwordResetService.verifyOtp(req);
 		return ResponseEntity.ok(valid ? "OTP valid" : "OTP invalid");
 	}
 
 	@PostMapping("/reset-password")
+	@Operation(summary = "Reset password", description = "Resets the user's password after verifying the OTP.")
 	public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest req) {
 		passwordResetService.resetPassword(req);
 		return ResponseEntity.ok("Password successfully reset");
