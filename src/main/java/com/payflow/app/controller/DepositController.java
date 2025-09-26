@@ -20,9 +20,6 @@ public class DepositController {
 
     private final DepositService depositService;
 
-    // -----------------------------
-    // Org Admin creates a deposit request
-    // -----------------------------
     @PostMapping("/org/{orgId}")
     @PreAuthorize("hasAuthority('ORG_ADMIN')")
     public ResponseEntity<DepositResponse> createDeposit(
@@ -33,9 +30,7 @@ public class DepositController {
         return ResponseEntity.ok(deposit);
     }
 
-    // -----------------------------
-    // Bank Admin approves or rejects a deposit
-    // -----------------------------
+  
     @PostMapping("/{depositId}/approve")
     @PreAuthorize("hasAuthority('BANK_ADMIN')")
     public ResponseEntity<DepositResponse> approveDeposit(
@@ -46,9 +41,6 @@ public class DepositController {
         return ResponseEntity.ok(deposit);
     }
 
-    // -----------------------------
-    // Org Admin lists all deposits for their organization
-    // -----------------------------
     @GetMapping("/org/{orgId}")
     @PreAuthorize("hasAuthority('ORG_ADMIN')")
     public ResponseEntity<List<DepositResponse>> listDepositsByOrg(

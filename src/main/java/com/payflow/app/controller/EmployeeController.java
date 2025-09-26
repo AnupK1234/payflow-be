@@ -4,76 +4,84 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.payflow.app.dto.request.EmployeeRequestDTO;
+import com.payflow.app.dto.request.CreateEmployeeRequestDTO;
 import com.payflow.app.dto.request.EmployeeSalaryStructureRequestDTO;
 import com.payflow.app.dto.response.EmployeeResponseDTO;
 import com.payflow.app.dto.response.EmployeeSalaryStructureResponseDTO;
 import com.payflow.app.service.EmployeeService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/employees")
 @RequiredArgsConstructor
+@Tag(name = "Employees", description = "APIs for managing employee data and salary structures")
 public class EmployeeController {
 
-    private final EmployeeService employeeService;
+	private final EmployeeService employeeService;
 
-    // ------------------ Employee CRUD ------------------
+	@PostMapping
+	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(summary = "Create a new employee", description = "This endpoint allows an ORG_ADMIN to create a new employee in the organization.")
+	public ResponseEntity<EmployeeResponseDTO> create(@Valid @RequestBody CreateEmployeeRequestDTO req) {
+		return ResponseEntity.ok(employeeService.createEmployee(req));
+	}
 
-    // ORG_ADMIN: Create employee
-    @PostMapping
-    @PreAuthorize("hasAuthority('ORG_ADMIN')")
-    public ResponseEntity<EmployeeResponseDTO> create(@Valid @RequestBody EmployeeRequestDTO req) {
-        return ResponseEntity.ok(employeeService.createEmployee(req));
-    }
+	@GetMapping
+	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(summary = "Get a list of all employees", description = "This endpoint returns a list of all employees in the organization.")
+	public ResponseEntity<List<EmployeeResponseDTO>> listAll() {
+		return ResponseEntity.ok(employeeService.getAllEmployees());
+	}
 
-    // ORG_ADMIN: Get all employees
-    @GetMapping
-    @PreAuthorize("hasAuthority('ORG_ADMIN')")
-    public ResponseEntity<List<EmployeeResponseDTO>> listAll() {
-        return ResponseEntity.ok(employeeService.getAllEmployees());
-    }
+	@GetMapping("/{id}")
+	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(summary = "Get details of an employee by ID", description = "This endpoint fetches the details of an employee identified by the provided ID.")
+	public ResponseEntity<EmployeeResponseDTO> getById(@PathVariable Long id) {
+		return ResponseEntity.ok(employeeService.getEmployeeById(id));
+	}
 
-    // ORG_ADMIN: Get employee by ID
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ORG_ADMIN')")
-    public ResponseEntity<EmployeeResponseDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(employeeService.getEmployeeById(id));
-    }
+	@PutMapping("/{id}")
+	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(summary = "Update employee details", description = "This endpoint allows an ORG_ADMIN to update an existing employee's details.")
 
-    // ORG_ADMIN: Update employee
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ORG_ADMIN')")
-    public ResponseEntity<EmployeeResponseDTO> update(@PathVariable Long id,
-                                                      @Valid @RequestBody EmployeeRequestDTO req) {
-        return ResponseEntity.ok(employeeService.updateEmployee(id, req));
-    }
+	public ResponseEntity<EmployeeResponseDTO> update(@PathVariable Long id,
+			@Valid @RequestBody CreateEmployeeRequestDTO req) {
+		return ResponseEntity.ok(employeeService.updateEmployee(id, req));
+	}
 
-    // ORG_ADMIN: Delete employee
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ORG_ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        employeeService.deleteEmployee(id);
-        return ResponseEntity.noContent().build();
-    }
+	@DeleteMapping("/{id}")
+	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(summary = "Delete an employee by ID", description = "This endpoint allows an ORG_ADMIN to delete an employee identified by the provided ID.")
+	public ResponseEntity<Void> delete(@PathVariable Long id) {
+		employeeService.deleteEmployee(id);
+		return ResponseEntity.noContent().build();
+	}
 
-    
-    @PostMapping("/{id}/salary-structures")
-    @PreAuthorize("hasAuthority('ORG_ADMIN')")
-    public ResponseEntity<EmployeeSalaryStructureResponseDTO> addSalaryStructure(
-            @PathVariable Long id,
-            @Valid @RequestBody EmployeeSalaryStructureRequestDTO req) {
-        return ResponseEntity.ok(employeeService.addSalaryStructure(id, req));
-    }
+	@PostMapping("/{id}/salary-structures")
+	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(summary = "Add salary structure for an employee", description = "This endpoint allows an ORG_ADMIN to add a salary structure for a specific employee.")
+	public ResponseEntity<EmployeeSalaryStructureResponseDTO> addSalaryStructure(@PathVariable Long id,
+			@Valid @RequestBody EmployeeSalaryStructureRequestDTO req) {
+		return ResponseEntity.ok(employeeService.addSalaryStructure(id, req));
+	}
 
-    // ORG_ADMIN: Get all salary structures for employee
-    @GetMapping("/{id}/salary-structures")
-    @PreAuthorize("hasAuthority('ORG_ADMIN')")
-    public ResponseEntity<List<EmployeeSalaryStructureResponseDTO>> getSalaryStructures(@PathVariable Long id) {
-        return ResponseEntity.ok(employeeService.getSalaryStructures(id));
-    }
+	@GetMapping("/{id}/salary-structures")
+	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(summary = "Get salary structures of an employee", description = "This endpoint returns all salary structures associated with a specific employee.")
+	public ResponseEntity<List<EmployeeSalaryStructureResponseDTO>> getSalaryStructures(@PathVariable Long id) {
+		return ResponseEntity.ok(employeeService.getSalaryStructures(id));
+	}
 }
