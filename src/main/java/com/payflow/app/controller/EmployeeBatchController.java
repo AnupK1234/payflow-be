@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,6 +38,10 @@ public class EmployeeBatchController {
 	 * @return A response indicating the job status.
 	 */
 	@PostMapping("/import")
+	@Operation(
+	        summary = "Batch Process employee creation",
+	        description = "Input a csv file of employee data and the api creates the employee in db in batches"
+	    )
 	public ResponseEntity<String> importEmployees(@RequestParam("file") MultipartFile file,
 			@RequestParam("organizationId") Long organizationId) {
 
