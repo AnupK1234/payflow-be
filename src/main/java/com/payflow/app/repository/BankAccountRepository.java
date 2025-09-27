@@ -6,9 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.payflow.app.entity.BankAccount;
 import com.payflow.app.entity.Organization;
+import com.payflow.app.enums.Role;
 
 public interface BankAccountRepository extends JpaRepository<BankAccount, Long> {
-
-    // Find the ACTIVE bank account for a given organization
-    Optional<BankAccount> findByOrganizationAndStatus(Organization organization, String status);
+    Optional<BankAccount> findByOrganizationAndOwnerTypeAndStatus(
+            Organization organization,
+            Role ownerType,
+            String status
+    );
 }

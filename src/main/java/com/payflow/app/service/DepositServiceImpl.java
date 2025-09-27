@@ -16,6 +16,7 @@ import com.payflow.app.entity.DepositRequest;
 import com.payflow.app.entity.Organization;
 import com.payflow.app.entity.User;
 import com.payflow.app.enums.DepositStatus;
+import com.payflow.app.enums.Role;
 import com.payflow.app.exception.NotFoundException;
 import com.payflow.app.repository.BankAccountRepository;
 import com.payflow.app.repository.DepositRequestRepository;
@@ -72,7 +73,7 @@ public class DepositServiceImpl implements DepositService {
         if (approve) {
             deposit.setStatus(DepositStatus.APPROVED);
 
-            BankAccount account = bankAccountRepo.findByOrganizationAndStatus(deposit.getOrganization(), "ACTIVE")
+            BankAccount account = bankAccountRepo.findByOrganizationAndOwnerTypeAndStatus(deposit.getOrganization(), Role.ORG_ADMIN, "ACTIVE")
                     .orElseThrow(() -> new NotFoundException("Active bank account not found"));
 
             account.setBalance(account.getBalance() + deposit.getAmount());
