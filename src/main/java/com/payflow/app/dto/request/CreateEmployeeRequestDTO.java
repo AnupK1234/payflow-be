@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EmployeeRequestDTO {
+public class CreateEmployeeRequestDTO {
 
     @NotBlank
     private String fullName;
@@ -33,8 +33,6 @@ public class EmployeeRequestDTO {
 
     @NotBlank
     private String status; 
-
-  
 
     @Size(min = 12, max = 12)
     private String aadhaarNumber;

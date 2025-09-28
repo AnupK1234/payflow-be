@@ -8,14 +8,13 @@ import com.payflow.app.dto.response.*;
 
 public interface EmployeeService {
 
-   
-    EmployeeResponseDTO createEmployee(EmployeeRequestDTO req);
+    EmployeeResponseDTO createEmployee(CreateEmployeeRequestDTO req);
 
     List<EmployeeResponseDTO> getAllEmployees();
 
     EmployeeResponseDTO getEmployeeById(Long id);
 
-    EmployeeResponseDTO updateEmployee(Long id, EmployeeRequestDTO req);
+    EmployeeResponseDTO updateEmployee(Long id, CreateEmployeeRequestDTO req);
 
     void deleteEmployee(Long id);
 

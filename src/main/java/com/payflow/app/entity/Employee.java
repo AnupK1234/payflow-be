@@ -61,7 +61,6 @@ public class Employee {
     @NotNull
     private Boolean isDeleted = false;
 
-    // --- Relationships ---
     @ManyToOne
     @JoinColumn(name = "organization_id", nullable = false)
     private Organization organization;
@@ -75,7 +74,6 @@ public class Employee {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EmployeeSalaryStructure> salaryStructures = new ArrayList<>();
 
-    // ✅ Add this for multiple bank accounts
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BankAccount> bankAccounts = new ArrayList<>();
 }

@@ -20,4 +20,11 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 
     // ✅ Correct method name for employee
     List<BankAccount> findByEmployeeId(Long employeeId);
+  
+   Optional<BankAccount> findByOrganizationAndOwnerTypeAndStatus(
+            Organization organization,
+            Role ownerType,
+            String status
+    );
+
 }

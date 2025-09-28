@@ -12,7 +12,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.payflow.app.dto.request.EmployeeRequestDTO;
+import com.payflow.app.dto.request.CreateEmployeeRequestDTO;
 import com.payflow.app.dto.request.EmployeeSalaryStructureRequestDTO;
 import com.payflow.app.dto.response.*;
 import com.payflow.app.entity.*;
@@ -38,7 +38,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     // Employee CRUD 
     @Override
-    public EmployeeResponseDTO createEmployee(EmployeeRequestDTO req) {
+
+    public EmployeeResponseDTO createEmployee(CreateEmployeeRequestDTO req) {
+        // 1️⃣ Map EmployeeRequestDTO to Employee
         Employee employee = modelMapper.map(req, Employee.class);
         employee.setId(null);
 
@@ -70,14 +72,13 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .build();
 
         userRepository.save(user);
-
         EmployeeResponseDTO response = modelMapper.map(employee, EmployeeResponseDTO.class);
         mapActiveBankAccountToResponse(employee, response);
         return response;
     }
 
     @Override
-    public EmployeeResponseDTO updateEmployee(Long id, EmployeeRequestDTO req) {
+    public EmployeeResponseDTO updateEmployee(Long id, CreateEmployeeRequestDTO req) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
 
