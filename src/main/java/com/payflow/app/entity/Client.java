@@ -17,7 +17,7 @@ public class Client {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    
+    // Basic client details
     @NotNull
     @Size(max = 100)
     @Column(nullable = false, length = 100)
@@ -39,7 +39,7 @@ public class Client {
     @Column(nullable = false, length = 10)
     private String contactPhone;
 
-    
+    // Optional address details
     @Column(length = 255)
     private String address;
 
@@ -55,20 +55,16 @@ public class Client {
     @Column(length = 10)
     private String postalCode;
 
-
     @Column(length = 20)
     private String status = "Active"; 
     
     @NotNull
     private Boolean isDeleted = false;
 
-    
     @ManyToOne
     @JoinColumn(name = "organization_id", nullable = false)
     private Organization organization;
 
-    // Optional login/user details if needed in future
-    
     @OneToOne(mappedBy = "client", cascade = CascadeType.ALL)
-    private User user;  
+    private User user; 
 }

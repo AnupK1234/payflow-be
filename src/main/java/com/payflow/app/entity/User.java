@@ -1,22 +1,8 @@
 package com.payflow.app.entity;
 
 import com.payflow.app.enums.Role;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Table(name = "users")
@@ -26,40 +12,40 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class User {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
 
-	@Column(nullable = false, unique = true)
-	private String username;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@Column(nullable = false, unique = true)
-	private String email;
+    @Column(nullable = false, unique = true)
+    private String username;
 
-	@Column(name = "password", nullable = false)
-	private String passwordHash;
+    @Column(nullable = false, unique = true)
+    private String email;
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private Role role; // BANK_ADMIN, ORG_ADMIN, EMPLOYEE, VENDOR, CLIENT
+    @Column(name = "password", nullable = false)
+    private String passwordHash;
 
-	private Boolean mustResetPassword = false;
-	private Boolean enabled = true;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)  // increased length
+    private Role role; 
 
-	@OneToOne
-	@JoinColumn(name = "organization_id")
-	private Organization organization;
+    private Boolean mustResetPassword = false;
+    private Boolean enabled = true;
 
-	@OneToOne
-	@JoinColumn(name = "employee_id")
-	private Employee employee;
+    @OneToOne
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
 
-	@OneToOne
-	@JoinColumn(name = "vendor_id")
-	private Vendor vendor;
+    @OneToOne
+    @JoinColumn(name = "employee_id")
+    private Employee employee;
 
-	@OneToOne
-	@JoinColumn(name = "client_id")
-	private Client client;
+    @OneToOne
+    @JoinColumn(name = "vendor_id")
+    private Vendor vendor;
 
+    @OneToOne
+    @JoinColumn(name = "client_id")
+    private Client client;
 }

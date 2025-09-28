@@ -1,15 +1,14 @@
 package com.payflow.app.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.payflow.app.dto.request.*;
 import com.payflow.app.dto.response.*;
 
-
-
 public interface EmployeeService {
 
-    // Employee CRUD
+   
     EmployeeResponseDTO createEmployee(EmployeeRequestDTO req);
 
     List<EmployeeResponseDTO> getAllEmployees();
@@ -20,8 +19,21 @@ public interface EmployeeService {
 
     void deleteEmployee(Long id);
 
-    // Salary Structure management for Employee
+    
     EmployeeSalaryStructureResponseDTO addSalaryStructure(Long employeeId, EmployeeSalaryStructureRequestDTO req);
 
     List<EmployeeSalaryStructureResponseDTO> getSalaryStructures(Long employeeId);
+
+    
+    List<SalaryAccountUpdateRequestResponseDTO> getPendingSalaryAccountRequests(Long orgId);
+
+   
+    boolean processSalaryAccountRequest(Long requestId, boolean approve);
+
+    boolean processSalaryAccountRequest(Long requestId, boolean approve, Long adminId);
+
+	List<SalaryAccountUpdateRequestResponseDTO> getSalaryAccountRequestsWithFilters(String employeeName,
+			String bankName, String status, LocalDate startDate, LocalDate endDate);
+    
 }
+

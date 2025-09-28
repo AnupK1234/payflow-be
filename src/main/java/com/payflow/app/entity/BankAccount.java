@@ -1,5 +1,6 @@
 package com.payflow.app.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
@@ -18,20 +19,22 @@ public class BankAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Owner type: EMPLOYEE, ORG_ADMIN, VENDOR, etc.
     @Enumerated(EnumType.STRING)
     @Column(name = "owner_type", nullable = false)
     private Role ownerType;
 
-    // Link to Employee (nullable for organization accounts)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = true)
     private Employee employee;
 
-    // Link to Organization (nullable for employee accounts)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organization_id", nullable = true)
     private Organization organization;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id", nullable = true)
+    @JsonBackReference   // <-- prevents infinite recursion
+    private Client client;
 
     @Column(name = "account_number_enc", nullable = false, length = 100)
     private String accountNumberEnc;
@@ -40,13 +43,9 @@ public class BankAccount {
     @Column(name = "ifsc", nullable = false, length = 11)
     private String ifsc;
 
-    // Status: ACTIVE, INACTIVE
     @Column(name = "status", nullable = false, length = 20)
     private String status = "ACTIVE";
-    
+
     @Builder.Default
     private Double balance = 0.0;
-
-    
-    
 }

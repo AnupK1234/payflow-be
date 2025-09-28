@@ -1,5 +1,7 @@
 package com.payflow.app.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -7,23 +9,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.payflow.app.dto.request.EmployeeRequestDTO;
 import com.payflow.app.dto.request.EmployeeSalaryStructureRequestDTO;
-import com.payflow.app.dto.response.BankAccountResponseDTO;
-import com.payflow.app.dto.response.EmployeeResponseDTO;
-import com.payflow.app.dto.response.EmployeeSalaryStructureResponseDTO;
-import com.payflow.app.entity.BankAccount;
-import com.payflow.app.entity.Employee;
-import com.payflow.app.entity.EmployeeSalaryStructure;
-import com.payflow.app.entity.Organization;
-import com.payflow.app.entity.User;
+import com.payflow.app.dto.response.*;
+import com.payflow.app.entity.*;
 import com.payflow.app.enums.Role;
 import com.payflow.app.exception.NotFoundException;
-import com.payflow.app.repository.EmployeeRepository;
-import com.payflow.app.repository.EmployeeSalaryStructureRepository;
-import com.payflow.app.repository.OrganizationRepository;
-import com.payflow.app.repository.UserRepository;
+import com.payflow.app.repository.*;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,53 +33,47 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder encoder;
-    
-    
+    private final SalaryAccountUpdateRequestRepository salaryAccountUpdateRequestRepository;
+    private final BankAccountRepository bankAccountRepository;
+
+    // Employee CRUD 
     @Override
     public EmployeeResponseDTO createEmployee(EmployeeRequestDTO req) {
-        // 1️⃣ Map EmployeeRequestDTO to Employee
         Employee employee = modelMapper.map(req, Employee.class);
-        employee.setId(null); // ensure Hibernate treats it as new
+        employee.setId(null);
 
-        // 2️⃣ Set organization
         Organization org = organizationRepository.findById(req.getOrganizationId())
-                .orElseThrow(() -> new NotFoundException(
-                        "Organization not found with id: " + req.getOrganizationId()));
+                .orElseThrow(() -> new NotFoundException("Organization not found with id: " + req.getOrganizationId()));
         employee.setOrganization(org);
 
-        // 3️⃣ Handle bank account
         if (req.getBankAccount() != null) {
             BankAccount bankAccount = BankAccount.builder()
-                    .employee(employee) // link to employee
-                    .ownerType(Role.EMPLOYEE) // owner type
-                    .accountNumberEnc(req.getBankAccount().getAccountNumber()) // store directly or encrypt
+                    .employee(employee)
+                    .ownerType(Role.EMPLOYEE)
+                    .accountNumberEnc(req.getBankAccount().getAccountNumber())
                     .ifsc(req.getBankAccount().getIfsc())
                     .status("ACTIVE")
                     .build();
-
-            // Initialize employee's bank accounts list
             employee.setBankAccounts(List.of(bankAccount));
         }
 
-        // 4️⃣ Save employee (cascades bank account)
         employee = employeeRepository.save(employee);
-       
 
         User user = User.builder()
-            .username(employee.getEmployeeCode())
-            .email(employee.getEmail())
-            .passwordHash(encoder.encode(employee.getEmployeeCode() + "123"))
-            .role(Role.EMPLOYEE)
-            .employee(employee) 
-            .mustResetPassword(true)
-            .enabled(true)
-            .build();
+                .username(employee.getEmployeeCode())
+                .email(employee.getEmail())
+                .passwordHash(encoder.encode(employee.getEmployeeCode() + "123"))
+                .role(Role.EMPLOYEE)
+                .employee(employee)
+                .mustResetPassword(true)
+                .enabled(true)
+                .build();
 
         userRepository.save(user);
 
-
-        // 5️⃣ Map to response DTO
-        return modelMapper.map(employee, EmployeeResponseDTO.class);
+        EmployeeResponseDTO response = modelMapper.map(employee, EmployeeResponseDTO.class);
+        mapActiveBankAccountToResponse(employee, response);
+        return response;
     }
 
     @Override
@@ -92,27 +81,21 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
 
-        // Map flat fields
         modelMapper.map(req, employee);
 
-        // Update organization if changed
         if (!employee.getOrganization().getId().equals(req.getOrganizationId())) {
             Organization org = organizationRepository.findById(req.getOrganizationId())
-                    .orElseThrow(() -> new NotFoundException(
-                            "Organization not found with id: " + req.getOrganizationId()));
+                    .orElseThrow(() -> new NotFoundException("Organization not found with id: " + req.getOrganizationId()));
             employee.setOrganization(org);
         }
 
-        // Handle bank account update
         if (req.getBankAccount() != null && req.getBankAccount().getAccountNumber() != null) {
-            // Mark old accounts as INACTIVE
             employee.getBankAccounts().forEach(acc -> acc.setStatus("INACTIVE"));
 
-            // Add new bank account
             BankAccount bankAccount = BankAccount.builder()
                     .employee(employee)
                     .ownerType(Role.EMPLOYEE)
-                    .accountNumberEnc(encrypt(req.getBankAccount().getAccountNumber()))
+                    .accountNumberEnc(req.getBankAccount().getAccountNumber())
                     .ifsc(req.getBankAccount().getIfsc())
                     .status("ACTIVE")
                     .build();
@@ -127,14 +110,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public List<EmployeeResponseDTO> getAllEmployees() {
-        return employeeRepository.findAll()
-                .stream()
+        return employeeRepository.findAll().stream()
                 .map(emp -> {
                     EmployeeResponseDTO dto = modelMapper.map(emp, EmployeeResponseDTO.class);
                     mapActiveBankAccountToResponse(emp, dto);
                     return dto;
-                })
-                .collect(Collectors.toList());
+                }).collect(Collectors.toList());
     }
 
     @Override
@@ -154,8 +135,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository.deleteById(id);
     }
 
-    // ------------------ Salary Structures ------------------
-
+    // Salary Structure 
     @Override
     public EmployeeSalaryStructureResponseDTO addSalaryStructure(Long employeeId,
             EmployeeSalaryStructureRequestDTO req) {
@@ -174,32 +154,129 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (!employeeRepository.existsById(employeeId)) {
             throw new NotFoundException("Employee not found with id: " + employeeId);
         }
-        return salaryStructureRepository.findByEmployeeId(employeeId)
-                .stream()
+        return salaryStructureRepository.findByEmployeeId(employeeId).stream()
                 .map(struct -> modelMapper.map(struct, EmployeeSalaryStructureResponseDTO.class))
                 .collect(Collectors.toList());
     }
 
-    // ------------------ Helper Methods ------------------
+    //  Salary Account Requests 
+    @Override
+    public List<SalaryAccountUpdateRequestResponseDTO> getPendingSalaryAccountRequests(Long orgId) {
+        List<SalaryAccountUpdateRequest> pendingRequests = salaryAccountUpdateRequestRepository
+                .findByEmployee_Organization_IdAndStatus(orgId, "PENDING");
 
+        return pendingRequests.stream()
+                .map(req -> SalaryAccountUpdateRequestResponseDTO.builder()
+                        .requestId(req.getId())
+                        .employeeId(req.getEmployee().getId())
+                        .employeeName(req.getEmployee().getFullName())
+                        .bankName(req.getBankName())
+                        .accountNumber(req.getAccountNumber())
+                        .ifscCode(req.getIfscCode())
+                        .status(req.getStatus())
+                        .requestedAt(req.getRequestedAt())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean processSalaryAccountRequest(Long requestId, boolean approve) {
+        SalaryAccountUpdateRequest request = salaryAccountUpdateRequestRepository.findById(requestId)
+                .orElseThrow(() -> new NotFoundException("Salary account update request not found"));
+
+        if (!"PENDING".equals(request.getStatus())) {
+            return false;
+        }
+
+        if (approve) {
+            
+            List<BankAccount> accounts = bankAccountRepository.findByEmployeeId(request.getEmployee().getId());
+            accounts.forEach(acc -> acc.setStatus("INACTIVE"));
+            bankAccountRepository.saveAll(accounts);
+
+            
+            BankAccount newAccount = BankAccount.builder()
+                    .employee(request.getEmployee())
+                    .ownerType(Role.EMPLOYEE)
+                    .accountNumberEnc(request.getAccountNumber())
+                    .ifsc(request.getIfscCode())
+                    .status("ACTIVE")
+                    .build();
+            bankAccountRepository.save(newAccount);
+
+            request.setStatus("APPROVED");
+        } else {
+            request.setStatus("REJECTED");
+        }
+
+        request.setProcessedAt(LocalDateTime.now());
+        request.setApprovedBy(getCurrentAdminId());
+        salaryAccountUpdateRequestRepository.save(request);
+
+        return true;
+    }
+
+    // Helper Methods 
     private void mapActiveBankAccountToResponse(Employee employee, EmployeeResponseDTO response) {
         employee.getBankAccounts().stream()
                 .filter(acc -> "ACTIVE".equals(acc.getStatus()))
                 .findFirst()
                 .ifPresent(ba -> response.setBankAccount(
                         BankAccountResponseDTO.builder()
-                                .accountNumber(decrypt(ba.getAccountNumberEnc()))
+                                .accountNumber(ba.getAccountNumberEnc())
                                 .ifsc(ba.getIfsc())
                                 .status(ba.getStatus())
                                 .build()
                 ));
     }
 
-    private String encrypt(String plain) {
-        return plain; // TODO: implement real encryption
+    private Long getCurrentAdminId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        com.payflow.app.entity.User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException("Logged-in admin not found"));
+
+        return user.getId();
     }
 
-    private String decrypt(String enc) {
-        return enc; // TODO: implement real decryption
-    }
+	@Override
+	public boolean processSalaryAccountRequest(Long requestId, boolean approve, Long adminId) {
+		
+		return false;
+	}
+	
+	@Override
+	public List<SalaryAccountUpdateRequestResponseDTO> getSalaryAccountRequestsWithFilters(
+	        String employeeName, String bankName, String status,
+	        LocalDate startDate, LocalDate endDate) {
+
+	    List<SalaryAccountUpdateRequest> requests = salaryAccountUpdateRequestRepository.findAll();
+
+	    return requests.stream()
+	            
+	            .filter(r -> employeeName == null || 
+	                    r.getEmployee().getFullName().toLowerCase().contains(employeeName.toLowerCase()))
+	            
+	            .filter(r -> bankName == null || 
+	                    r.getBankName().toLowerCase().contains(bankName.toLowerCase()))
+	            
+	            .filter(r -> status == null || r.getStatus().equalsIgnoreCase(status))
+	            
+	            .filter(r -> startDate == null || !r.getRequestedAt().toLocalDate().isBefore(startDate))
+	            
+	            .filter(r -> endDate == null || !r.getRequestedAt().toLocalDate().isAfter(endDate))
+	            .map(r -> SalaryAccountUpdateRequestResponseDTO.builder()
+	                    .requestId(r.getId())
+	                    .employeeId(r.getEmployee().getId())
+	                    .employeeName(r.getEmployee().getFullName())
+	                    .bankName(r.getBankName())
+	                    .accountNumber(r.getAccountNumber())
+	                    .ifscCode(r.getIfscCode())
+	                    .status(r.getStatus())
+	                    .requestedAt(r.getRequestedAt())
+	                    .build())
+	            .collect(Collectors.toList());
+	}
+
 }

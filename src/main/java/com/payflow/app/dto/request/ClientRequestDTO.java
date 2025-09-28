@@ -1,25 +1,30 @@
+
 package com.payflow.app.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.*;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ClientRequestDTO {
 
-    @NotBlank
-    private String companyName;            
+    @NotNull
+    @Size(max = 100)
+    private String companyName;
 
-    @NotBlank
-    private String contactPersonName;       
+    @NotNull
+    @Size(max = 100)
+    private String contactPersonName;
 
-    @NotBlank
+    @NotNull
     @Email
+    @Size(max = 120)
     private String contactEmail;
 
-    @NotBlank
+    @NotNull
     @Pattern(regexp = "\\d{10}", message = "Phone number must be 10 digits")
     private String contactPhone;
 
@@ -29,8 +34,11 @@ public class ClientRequestDTO {
     private String country;
     private String postalCode;
 
-    private String status;                  
+    private String status;
+    private Boolean isDeleted;
 
     @NotNull
-    private Long organizationId;            
+    private Long organizationId;
+
+    private BankAccountRequestDTO bankAccount;
 }
