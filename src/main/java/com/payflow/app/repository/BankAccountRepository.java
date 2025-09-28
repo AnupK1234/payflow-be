@@ -2,6 +2,8 @@ package com.payflow.app.repository;
 
 import com.payflow.app.entity.BankAccount;
 import com.payflow.app.entity.Organization;
+import com.payflow.app.enums.Role;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
