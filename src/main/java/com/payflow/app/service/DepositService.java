@@ -12,14 +12,21 @@ import com.payflow.app.enums.DepositStatus;
 
 public interface DepositService {
 
-	// Org Admin creates a deposit request
-	DepositResponse createDeposit(Long orgId, CreateDepositRequest req);
+    DepositResponse createDepositForOrg(Long orgId, CreateDepositRequest request);
 
-	// Bank Admin approves or rejects a deposit request
-	DepositResponse approveDeposit(Long depositId, boolean approve);
+    DepositResponse createDepositForClient(Long clientId, CreateDepositRequest request);
 
-	// Org Admin lists all deposits for their organization
-	List<DepositResponse> listByOrg(Long orgId);
+    DepositResponse approveDeposit(Long depositId, boolean approve);
 
-	Page<DepositResponse> listForBank(DepositStatus status, LocalDate startDate, LocalDate endDate, Pageable pageable);
+    List<DepositResponse> listDepositsForLoggedInUser();
+
+    Page<DepositResponse> listForBank(DepositStatus status, LocalDate startDate, LocalDate endDate, Pageable pageable);
+
+    List<DepositResponse> listByOrg(Long orgId);
+
+    List<DepositResponse> listByClient(Long clientId);
+
+    Long getOrgIdForUsername(String username);
+
+    Long getClientIdForUsername(String username);
 }

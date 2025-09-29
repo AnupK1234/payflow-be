@@ -36,24 +36,21 @@ public class ClientServiceImpl implements ClientService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder encoder;
 
+    // ---------------- Create Client ----------------
     @Override
-    public ClientResponseDTO createClient(ClientRequestDTO req) {
-        // 1. Map Client
+    public ClientResponseDTO createClient(ClientRequestDTO req, Long organizationId) {
+        Organization org = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new NotFoundException("Organization not found with id: " + organizationId));
+
         Client client = modelMapper.map(req, Client.class);
         client.setId(null);
-
-        // 2. Set Organization
-        Organization org = organizationRepository.findById(req.getOrganizationId())
-                .orElseThrow(() -> new NotFoundException("Organization not found with id: " + req.getOrganizationId()));
         client.setOrganization(org);
 
-        // 3. Save client first
         client = clientRepository.save(client);
 
-        // 4. Handle BankAccount (if provided)
+        // Create BankAccount if provided
         if (req.getBankAccount() != null) {
             BankAccountRequestDTO baReq = req.getBankAccount();
-
             BankAccount bankAccount = BankAccount.builder()
                     .client(client)
                     .ownerType(Role.CLIENT)
@@ -62,13 +59,12 @@ public class ClientServiceImpl implements ClientService {
                     .status("ACTIVE")
                     .balance(0.0)
                     .build();
-
             bankAccountRepository.save(bankAccount);
         }
 
-        // 5. Create linked User row
+        // Create linked User
         User clientUser = User.builder()
-                .username(client.getContactEmail()) // email as default username
+                .username(client.getContactEmail())
                 .email(client.getContactEmail())
                 .passwordHash(encoder.encode(client.getContactEmail() + "123"))
                 .role(Role.CLIENT)
@@ -76,30 +72,33 @@ public class ClientServiceImpl implements ClientService {
                 .mustResetPassword(true)
                 .enabled(true)
                 .build();
-
         userRepository.save(clientUser);
 
         return modelMapper.map(client, ClientResponseDTO.class);
     }
 
+    // ---------------- Get All Clients ----------------
     @Override
-    public List<ClientResponseDTO> getAllClients() {
-        return clientRepository.findAll().stream()
+    public List<ClientResponseDTO> getAllClients(Long organizationId) {
+        return clientRepository.findByOrganizationIdAndIsDeletedFalse(organizationId)
+                .stream()
                 .map(client -> modelMapper.map(client, ClientResponseDTO.class))
                 .collect(Collectors.toList());
     }
 
+    // ---------------- Get Client By ID ----------------
     @Override
-    public ClientResponseDTO getClientById(Long id) {
-        Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Client not found with id: " + id));
+    public ClientResponseDTO getClientById(Long id, Long organizationId) {
+        Client client = clientRepository.findByIdAndOrganizationIdAndIsDeletedFalse(id, organizationId)
+                .orElseThrow(() -> new NotFoundException("Client not found with id: " + id + " in your organization"));
         return modelMapper.map(client, ClientResponseDTO.class);
     }
 
+    // ---------------- Update Client ----------------
     @Override
-    public ClientResponseDTO updateClient(Long id, ClientRequestDTO req) {
-        Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Client not found with id: " + id));
+    public ClientResponseDTO updateClient(Long id, ClientRequestDTO req, Long organizationId) {
+        Client client = clientRepository.findByIdAndOrganizationIdAndIsDeletedFalse(id, organizationId)
+                .orElseThrow(() -> new NotFoundException("Client not found with id: " + id + " in your organization"));
 
         client.setCompanyName(req.getCompanyName());
         client.setContactPersonName(req.getContactPersonName());
@@ -112,19 +111,11 @@ public class ClientServiceImpl implements ClientService {
         client.setPostalCode(req.getPostalCode());
         client.setStatus(req.getStatus());
 
-        if (!client.getOrganization().getId().equals(req.getOrganizationId())) {
-            Organization org = organizationRepository.findById(req.getOrganizationId())
-                    .orElseThrow(() -> new NotFoundException("Organization not found with id: " + req.getOrganizationId()));
-            client.setOrganization(org);
-        }
-
-        // ✅ Handle new BankAccount if provided during update
+        // Update BankAccount if provided
         if (req.getBankAccount() != null && req.getBankAccount().getAccountNumber() != null) {
-            // mark existing as INACTIVE
             bankAccountRepository.findByClientId(client.getId())
                     .ifPresent(acc -> acc.setStatus("INACTIVE"));
 
-            // add new bank account
             BankAccount bankAccount = BankAccount.builder()
                     .client(client)
                     .ownerType(Role.CLIENT)
@@ -133,7 +124,6 @@ public class ClientServiceImpl implements ClientService {
                     .status("ACTIVE")
                     .balance(0.0)
                     .build();
-
             bankAccountRepository.save(bankAccount);
         }
 
@@ -141,17 +131,18 @@ public class ClientServiceImpl implements ClientService {
         return modelMapper.map(client, ClientResponseDTO.class);
     }
 
+    // ---------------- Delete Client ----------------
     @Override
-    public void deleteClient(Long id) {
-        Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Client not found with id: " + id));
+    public void deleteClient(Long id, Long organizationId) {
+        Client client = clientRepository.findByIdAndOrganizationIdAndIsDeletedFalse(id, organizationId)
+                .orElseThrow(() -> new NotFoundException("Client not found with id: " + id + " in your organization"));
 
         client.setIsDeleted(true);
         clientRepository.save(client);
     }
 
-    // --- helper encryption ---
+    // ---------------- Helper: Encryption ----------------
     private String encrypt(String plain) {
-        return plain; // TODO: replace with actual encryption logic
+        return plain; // TODO: Replace with actual encryption logic
     }
 }

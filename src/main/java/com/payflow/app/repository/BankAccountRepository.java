@@ -1,6 +1,7 @@
 package com.payflow.app.repository;
 
 import com.payflow.app.entity.BankAccount;
+import com.payflow.app.entity.Client;
 import com.payflow.app.entity.Organization;
 import com.payflow.app.enums.Role;
 
@@ -22,11 +23,18 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 
     // ✅ Correct method name for employee
     List<BankAccount> findByEmployeeId(Long employeeId);
-  
-   Optional<BankAccount> findByOrganizationAndOwnerTypeAndStatus(
+
+    // For org deposits
+    Optional<BankAccount> findByOrganizationAndOwnerTypeAndStatus(
             Organization organization,
             Role ownerType,
             String status
     );
 
+    // For client deposits
+    Optional<BankAccount> findByClientAndOwnerTypeAndStatus(
+            Client client,
+            Role ownerType,
+            String status
+    );
 }
