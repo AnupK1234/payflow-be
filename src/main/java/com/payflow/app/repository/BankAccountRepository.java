@@ -29,17 +29,6 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 	Optional<BankAccount> findByOrganizationAndOwnerTypeAndStatus(Organization organization, Role ownerType,
 			String status);
 
-
- 
-    List<BankAccount> findByEmployeeId(Long employeeId);
-
-    // For org deposits
-    Optional<BankAccount> findByOrganizationAndOwnerTypeAndStatus(
-            Organization organization,
-            Role ownerType,
-            String status
-    );
-
 	// Employee account for a given employee
 	Optional<BankAccount> findByEmployeeAndOwnerTypeAndStatus(Employee employee, Role ownerType, String status);
 
