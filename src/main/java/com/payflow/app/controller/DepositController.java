@@ -8,13 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import com.payflow.app.dto.request.CreateDepositRequest;
 import com.payflow.app.dto.response.DepositResponse;
@@ -30,51 +25,71 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/deposits")
 @RequiredArgsConstructor
-@Tag(name = "Deposits", description = "APIs for managing deposits from organizations")
+@Tag(name = "Deposits", description = "APIs for managing deposits from organizations and clients")
 public class DepositController {
 
-	private final DepositService depositService;
+    private final DepositService depositService;
 
-	@PostMapping("/org/{orgId}")
-	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@Operation(summary = "Create a deposit request", description = "Used by an organization admin to create a deposit request")
-	public ResponseEntity<DepositResponse> createDeposit(@PathVariable Long orgId,
-			@Valid @RequestBody CreateDepositRequest request) {
+    // ---------------- Create Deposit ----------------
+    @PostMapping
+    @PreAuthorize("hasAnyAuthority('ORG_ADMIN','CLIENT')")
+    @Operation(summary = "Create a deposit request")
+    public ResponseEntity<DepositResponse> createDeposit(
+            @Valid @RequestBody CreateDepositRequest request,
+            Authentication authentication
+    ) {
+        String username = authentication.getName();
+        Long orgId = depositService.getOrgIdForUsername(username);
+        Long clientId = depositService.getClientIdForUsername(username);
 
-		DepositResponse deposit = depositService.createDeposit(orgId, request);
-		return ResponseEntity.ok(deposit);
-	}
+        if (orgId != null) {
+            return ResponseEntity.ok(depositService.createDepositForOrg(orgId, request));
+        } else if (clientId != null) {
+            return ResponseEntity.ok(depositService.createDepositForClient(clientId, request));
+        } else {
+            return ResponseEntity.status(403).build();
+        }
+    }
 
-	@PostMapping("/{depositId}/approve")
-	@PreAuthorize("hasAuthority('BANK_ADMIN')")
-	@Operation(summary = "Approve or reject a deposit request", description = "Used by bank admin to approve or reject an organization's deposit")
-	public ResponseEntity<DepositResponse> approveDeposit(@PathVariable Long depositId, @RequestParam boolean approve) {
+    // ---------------- Approve/Reject Deposit ----------------
+    @PostMapping("/{depositId}/approve")
+    @PreAuthorize("hasAuthority('BANK_ADMIN')")
+    @Operation(summary = "Approve or reject a deposit request")
+    public ResponseEntity<DepositResponse> approveDeposit(
+            @PathVariable Long depositId,
+            @RequestParam boolean approve
+    ) {
+        return ResponseEntity.ok(depositService.approveDeposit(depositId, approve));
+    }
 
-		DepositResponse deposit = depositService.approveDeposit(depositId, approve);
-		return ResponseEntity.ok(deposit);
-	}
+    // ---------------- List Deposits for Org ----------------
+    @GetMapping("/org")
+    @PreAuthorize("hasAuthority('ORG_ADMIN')")
+    @Operation(summary = "List all deposits by organization")
+    public ResponseEntity<List<DepositResponse>> listDepositsByOrg(Authentication authentication) {
+        Long orgId = depositService.getOrgIdForUsername(authentication.getName());
+        return ResponseEntity.ok(depositService.listByOrg(orgId));
+    }
 
-	@GetMapping("/org/{orgId}")
-	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@Operation(summary = "List all deposits by organization", description = "Fetches deposits for a given organization by its admin")
-	public ResponseEntity<List<DepositResponse>> listDepositsByOrg(@PathVariable Long orgId) {
+    // ---------------- List Deposits for Client ----------------
+    @GetMapping("/client")
+    @PreAuthorize("hasAuthority('CLIENT')")
+    @Operation(summary = "List all deposits by client")
+    public ResponseEntity<List<DepositResponse>> listDepositsByClient(Authentication authentication) {
+        Long clientId = depositService.getClientIdForUsername(authentication.getName());
+        return ResponseEntity.ok(depositService.listByClient(clientId));
+    }
 
-		List<DepositResponse> deposits = depositService.listByOrg(orgId);
-		return ResponseEntity.ok(deposits);
-	}
-
-	@GetMapping("/bank")
-	@PreAuthorize("hasAuthority('BANK_ADMIN')")
-	@Operation(summary = "List all deposits across organizations", description = "Used by bank admin to view deposits from all organizations, with optional filters (status, date range, pagination)")
-	public ResponseEntity<Page<DepositResponse>> listDepositsForBank(
-			@Parameter(description = "Filter deposits by status (PENDING, APPROVED, REJECTED). Default = all") @RequestParam(required = false) DepositStatus status,
-
-			@Parameter(description = "Filter deposits created after this date (inclusive)") @RequestParam(required = false) LocalDate startDate,
-
-			@Parameter(description = "Filter deposits created before this date (inclusive)") @RequestParam(required = false) LocalDate endDate,
-
-			@ParameterObject Pageable pageable) {
-
-		return ResponseEntity.ok(depositService.listForBank(status, startDate, endDate, pageable));
-	}
+    // ---------------- List Deposits for Bank ----------------
+    @GetMapping("/bank")
+    @PreAuthorize("hasAuthority('BANK_ADMIN')")
+    @Operation(summary = "List all deposits across organizations and clients")
+    public ResponseEntity<Page<DepositResponse>> listDepositsForBank(
+            @Parameter(description = "Filter by status") @RequestParam(required = false) DepositStatus status,
+            @Parameter(description = "Start date filter") @RequestParam(required = false) LocalDate startDate,
+            @Parameter(description = "End date filter") @RequestParam(required = false) LocalDate endDate,
+            @ParameterObject Pageable pageable
+    ) {
+        return ResponseEntity.ok(depositService.listForBank(status, startDate, endDate, pageable));
+    }
 }

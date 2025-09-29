@@ -31,18 +31,21 @@ public class DepositRequest {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-
     private LocalDateTime approvedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organization_id", nullable = false)
+    @JoinColumn(name = "organization_id") // now nullable
     private Organization organization;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
-    private User createdBy; // Org Admin
+    private User createdBy; // Org Admin or Client
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by")
     private User approvedBy; // Bank Admin
+
+    @ManyToOne
+    @JoinColumn(name = "client_id")
+    private Client client;
 }

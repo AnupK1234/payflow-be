@@ -6,7 +6,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.payflow.app.entity.BankAccount;
+import com.payflow.app.entity.Client;
 import com.payflow.app.entity.Employee;
+
 import com.payflow.app.entity.Organization;
 import com.payflow.app.enums.Role;
 
@@ -21,13 +23,30 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 	// Fetch organization bank account by organization and status
 	Optional<BankAccount> findByOrganizationAndStatus(Organization organization, String status);
 
-	// ✅ Correct method name for employee
+
 	List<BankAccount> findByEmployeeId(Long employeeId);
 
 	Optional<BankAccount> findByOrganizationAndOwnerTypeAndStatus(Organization organization, Role ownerType,
 			String status);
 
+
+ 
+    List<BankAccount> findByEmployeeId(Long employeeId);
+
+    // For org deposits
+    Optional<BankAccount> findByOrganizationAndOwnerTypeAndStatus(
+            Organization organization,
+            Role ownerType,
+            String status
+    );
+
 	// Employee account for a given employee
 	Optional<BankAccount> findByEmployeeAndOwnerTypeAndStatus(Employee employee, Role ownerType, String status);
 
+    // For client deposits
+    Optional<BankAccount> findByClientAndOwnerTypeAndStatus(
+            Client client,
+            Role ownerType,
+            String status
+    );
 }
