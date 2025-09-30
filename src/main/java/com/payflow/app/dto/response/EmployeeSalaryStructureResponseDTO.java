@@ -27,7 +27,7 @@ public class EmployeeSalaryStructureResponseDTO {
 
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
-
+    private Boolean isCurrent;
     
 
     public String getMonth() {

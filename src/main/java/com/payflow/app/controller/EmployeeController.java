@@ -103,7 +103,7 @@ public class EmployeeController {
 				startDate, endDate));
 	}
 
-	// Process (approve/reject) a salary account update request using a boolean flag
+
 	@PostMapping("/salary-account/requests/{requestId}/process")
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
 	public ResponseEntity<String> processSalaryAccountRequest(@PathVariable Long requestId,

@@ -2,8 +2,7 @@ package com.payflow.app.service;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -71,40 +70,58 @@ public class EmployeeSelfServiceImpl implements EmployeeSelfService {
             User user = getCurrentUser();
             Long employeeId = user.getEmployee().getId();
 
-            List<EmployeeSalaryStructureResponseDTO> salaryList = salaryStructureRepository
+            // Fetch all salaries overlapping requested period
+            List<EmployeeSalaryStructureResponseDTO> allSalaries = salaryStructureRepository
                     .findByEmployeeId(employeeId)
                     .stream()
-                    .map(struct -> modelMapper.map(struct, EmployeeSalaryStructureResponseDTO.class))
-                    .filter(s -> {
-                        boolean overlaps = true;
-                        if (startDate != null) {
-                            overlaps = !s.getEffectiveTo().isBefore(startDate); // end >= start
-                        }
-                        if (endDate != null) {
-                            overlaps = overlaps && !s.getEffectiveFrom().isAfter(endDate); // start <= end
-                        }
-                        return overlaps;
-                    })
+                    .map(s -> modelMapper.map(s, EmployeeSalaryStructureResponseDTO.class))
+                    .filter(s -> 
+                        (startDate == null || !s.getEffectiveTo().isBefore(startDate)) &&
+                        (endDate == null || !s.getEffectiveFrom().isAfter(endDate))
+                    )
+                    .sorted(Comparator.comparing(EmployeeSalaryStructureResponseDTO::getEffectiveFrom).reversed())
                     .collect(Collectors.toList());
+
+            // Keep only the latest overlapping salaries for the requested period
+            List<EmployeeSalaryStructureResponseDTO> latestSalaries = new ArrayList<>();
+            LocalDate periodStart = startDate != null ? startDate : LocalDate.MIN;
+            LocalDate periodEnd = endDate != null ? endDate : LocalDate.MAX;
+
+            for (EmployeeSalaryStructureResponseDTO s : allSalaries) {
+                LocalDate effFrom = s.getEffectiveFrom();
+                LocalDate effTo = s.getEffectiveTo() != null ? s.getEffectiveTo() : LocalDate.MAX;
+
+                // Check if salary overlaps any remaining period
+                if (!effTo.isBefore(periodStart) && !effFrom.isAfter(periodEnd)) {
+                    latestSalaries.add(s);
+
+                    // Shrink the periodStart to exclude this salary from earlier ones
+                    if (effFrom.isAfter(periodStart)) {
+                        periodEnd = effFrom.minusDays(1);
+                    } else {
+                        break; // No more earlier salaries matter
+                    }
+                }
+            }
 
             PdfWriter writer = new PdfWriter(response.getOutputStream());
             PdfDocument pdfDoc = new PdfDocument(writer);
             Document document = new Document(pdfDoc);
 
             document.add(new Paragraph("Salary History for Employee: " + user.getEmployee().getFullName())
-                    .setBold().setFontSize(14));
+                    .setBold().setFontSize(16));
             document.add(new Paragraph("\n"));
 
-            float[] columnWidths = {150F, 300F};
-            Table table = new Table(columnWidths);
-            table.useAllAvailableWidth();
+            for (EmployeeSalaryStructureResponseDTO s : latestSalaries) {
+                float[] columnWidths = {150F, 250F};
+                Table table = new Table(columnWidths);
+                table.useAllAvailableWidth();
 
-            for (EmployeeSalaryStructureResponseDTO s : salaryList) {
                 table.addCell(new Cell().add(new Paragraph("Effective From").setBold()));
                 table.addCell(new Cell().add(new Paragraph(s.getEffectiveFrom().toString())));
 
                 table.addCell(new Cell().add(new Paragraph("Effective To").setBold()));
-                table.addCell(new Cell().add(new Paragraph(s.getEffectiveTo().toString())));
+                table.addCell(new Cell().add(new Paragraph(s.getEffectiveTo() != null ? s.getEffectiveTo().toString() : "-")));
 
                 table.addCell(new Cell().add(new Paragraph("Basic").setBold()));
                 table.addCell(new Cell().add(new Paragraph(String.valueOf(s.getBasic()))));
@@ -119,18 +136,22 @@ public class EmployeeSelfServiceImpl implements EmployeeSelfService {
                 table.addCell(new Cell().add(new Paragraph(String.valueOf(s.getPf()))));
 
                 table.addCell(new Cell().add(new Paragraph("Other Allowances").setBold()));
-                table.addCell(new Cell().add(new Paragraph(s.getOtherAllowances())));
-                
-             
+                table.addCell(new Cell().add(new Paragraph(s.getOtherAllowances() != null ? s.getOtherAllowances() : "-")));
+
                 table.addCell(new Cell().add(new Paragraph("Net Salary").setBold()));
                 table.addCell(new Cell().add(new Paragraph(String.valueOf(s.getNetSalary()))));
 
-                
+                table.addCell(new Cell().add(new Paragraph("Active").setBold()));
+                table.addCell(new Cell().add(new Paragraph(s.getIsCurrent() != null && s.getIsCurrent() ? "Yes" : "No")));
 
-                table.addCell(new Cell(1, 2).add(new Paragraph("\n"))); // separator row
+                document.add(table);
+                document.add(new Paragraph("\n")); // spacing
             }
 
-            document.add(table);
+            if (latestSalaries.isEmpty()) {
+                document.add(new Paragraph("No salary found for the selected period."));
+            }
+
             document.close();
 
         } catch (IOException e) {
@@ -138,52 +159,7 @@ public class EmployeeSelfServiceImpl implements EmployeeSelfService {
         }
     }
 
-    @Override
-    public void downloadSalaryHistoryCsv(LocalDate startDate, LocalDate endDate, HttpServletResponse response) {
-        try {
-            response.setContentType("text/csv");
-            response.setHeader("Content-Disposition", "attachment; filename=salary_history.csv");
-
-            User user = getCurrentUser();
-            Long employeeId = user.getEmployee().getId();
-
-            List<EmployeeSalaryStructureResponseDTO> salaryList = salaryStructureRepository
-                    .findByEmployeeId(employeeId)
-                    .stream()
-                    .map(struct -> modelMapper.map(struct, EmployeeSalaryStructureResponseDTO.class))
-                    .filter(s -> {
-                        boolean overlaps = true;
-                        if (startDate != null) {
-                            overlaps = !s.getEffectiveTo().isBefore(startDate);
-                        }
-                        if (endDate != null) {
-                            overlaps = overlaps && !s.getEffectiveFrom().isAfter(endDate);
-                        }
-                        return overlaps;
-                    })
-                    .collect(Collectors.toList());
-
-            String header = "Effective From,Effective To,Basic,HRA,DA,PF,Other Allowances\n";
-            response.getWriter().write(header);
-
-            for (EmployeeSalaryStructureResponseDTO s : salaryList) {
-                response.getWriter().write(
-                        s.getEffectiveFrom() + "," +
-                        s.getEffectiveTo() + "," +
-                        s.getBasic() + "," +
-                        s.getHra() + "," +
-                        s.getDa() + "," +
-                        s.getPf() + "," +
-                        s.getOtherAllowances() + "\n"
-                );
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException("Error generating CSV: " + e.getMessage());
-        }
-    }
-
-    // Salary Account Update Request
+    // ---------------- Salary Account Update Request ----------------
     @Override
     public void requestSalaryAccountUpdate(@Valid SalaryAccountUpdateRequestDTO requestDTO) {
         User user = getCurrentUser();
@@ -197,10 +173,13 @@ public class EmployeeSelfServiceImpl implements EmployeeSelfService {
         request.setIfscCode(requestDTO.getIfscCode());
         request.setAdditionalInfo(requestDTO.getAdditionalInfo());
         request.setStatus("PENDING");
-        request.setRequestedAt(LocalDateTime.now());
+        request.setRequestedAt(java.time.LocalDateTime.now());
 
         salaryAccountUpdateRequestRepository.save(request);
+    }
 
-        // Optional: notify org admin about the request
+    @Override
+    public void downloadSalaryHistoryCsv(LocalDate startDate, LocalDate endDate, HttpServletResponse response) {
+        // CSV removed as per requirement
     }
 }
