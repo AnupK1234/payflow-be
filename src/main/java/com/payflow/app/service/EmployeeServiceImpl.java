@@ -142,9 +142,12 @@ public class EmployeeServiceImpl implements EmployeeService {
             EmployeeSalaryStructureRequestDTO req) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new NotFoundException("Employee not found with id: " + employeeId));
+        
+        salaryStructureRepository.deactivateCurrentStructuresForEmployee(employeeId);
 
         EmployeeSalaryStructure structure = modelMapper.map(req, EmployeeSalaryStructure.class);
         structure.setEmployee(employee);
+        structure.setIsCurrent(Boolean.TRUE); 
 
         structure = salaryStructureRepository.save(structure);
         return modelMapper.map(structure, EmployeeSalaryStructureResponseDTO.class);

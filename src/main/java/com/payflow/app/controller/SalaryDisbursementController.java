@@ -19,11 +19,15 @@ import com.payflow.app.enums.DisbursementStatus;
 import com.payflow.app.repository.OrganizationRepository;
 import com.payflow.app.repository.SalaryDisbursementRequestRepository;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/salary-disbursement")
 @RequiredArgsConstructor
+@Tag(name = "Salary Disbursement Management", description = "APIs for initiating and approving salary disbursement requests and triggering batch jobs.")
 public class SalaryDisbursementController {
 	private final SalaryDisbursementRequestRepository requestRepo;
 	private final OrganizationRepository orgRepo;
@@ -32,6 +36,10 @@ public class SalaryDisbursementController {
 
 	@PostMapping("/{orgId}/request")
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(summary = "Create Salary Disbursement Request", description = "An ORG_ADMIN submits a request to initiate salary disbursement for a specific organization. The request starts in PENDING status.", responses = {
+			@ApiResponse(responseCode = "200", description = "Disbursement request created successfully and returned."),
+			@ApiResponse(responseCode = "403", description = "Forbidden: User does not have 'ORG_ADMIN' authority."),
+			@ApiResponse(responseCode = "404", description = "Organization not found.") })
 	public SalaryDisbursementResponse createRequest(@PathVariable Long orgId) {
 		Organization org = orgRepo.findById(orgId).orElseThrow(() -> new RuntimeException("Organization not found"));
 
@@ -49,6 +57,11 @@ public class SalaryDisbursementController {
 
 	@PostMapping("/{requestId}/approve")
 	@PreAuthorize("hasAuthority('BANK_ADMIN')")
+	@Operation(summary = "Approve Disbursement Request and Start Job", description = "A BANK_ADMIN approves a PENDING disbursement request, updates its status to APPROVED, and triggers the Spring Batch job for processing the payroll.", responses = {
+			@ApiResponse(responseCode = "200", description = "Request approved and Disbursement Batch Job successfully started."),
+			@ApiResponse(responseCode = "403", description = "Forbidden: User does not have 'BANK_ADMIN' authority."),
+			@ApiResponse(responseCode = "404", description = "Disbursement Request not found."),
+			@ApiResponse(responseCode = "500", description = "Internal server error, possibly due to job execution failure.") })
 	public String approveRequest(@PathVariable Long requestId) throws Exception {
 		SalaryDisbursementRequest req = requestRepo.findById(requestId)
 				.orElseThrow(() -> new RuntimeException("Request not found"));
