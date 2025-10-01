@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/employees/batch")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Employee Creation in Batch", description = "APIs for creating employees in batches by uploading a CSV file as input")
 public class EmployeeBatchController {
 
 	private final JobLauncher jobLauncher;
