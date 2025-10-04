@@ -1,5 +1,6 @@
 package com.payflow.app.controller;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,8 +16,11 @@ import com.payflow.app.dto.request.AuthRequest;
 import com.payflow.app.dto.request.ForgotPasswordRequest;
 import com.payflow.app.dto.request.ResetPasswordRequest;
 import com.payflow.app.dto.request.VerifyOtpRequest;
+import com.payflow.app.dto.response.UserResponse;
+import com.payflow.app.entity.User;
 import com.payflow.app.security.jwt.JwtService;
 import com.payflow.app.service.PasswordResetService;
+import com.payflow.app.service.UserServiceImpl;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +33,9 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
 	private final UserDetailsService userDetailsService;
+	private final ModelMapper modelMapper;
 	private final PasswordResetService passwordResetService;
+	private final UserServiceImpl userService;
 
 	private final AuthenticationManager authenticationManager;
 	private final JwtService jwtService;
@@ -40,12 +46,17 @@ public class AuthController {
 		Authentication auth = authenticationManager
 				.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-		UserDetails user = (UserDetails) auth.getPrincipal();
+		UserDetails userDetails = (UserDetails) auth.getPrincipal();
 
-		String token = jwtService.generateToken(user, 3600000); // 1 hour
+		// 2. Fetch the full User entity from DB using the authenticated username
+		// (This method needs to be implemented in your UserService)
+		User userEntity = userService.findByUsername(userDetails.getUsername());
 
-		return ResponseEntity.ok(
-				new TokenResponse(token, user.getUsername(), user.getAuthorities().iterator().next().getAuthority()));
+		String token = jwtService.generateToken(userDetails, 3600000); // 1 hour
+
+		UserResponse userDto = modelMapper.map(userEntity, UserResponse.class);
+
+		return ResponseEntity.ok(new LoginResponse(token, userDto));
 	}
 
 	@PostMapping("/forgot-password")
@@ -70,5 +81,8 @@ public class AuthController {
 	}
 
 	record TokenResponse(String token, String username, String role) {
+	}
+
+	record LoginResponse(String token, UserResponse user) {
 	}
 }
