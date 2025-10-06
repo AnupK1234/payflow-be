@@ -16,6 +16,7 @@ import com.payflow.app.exception.NotFoundException;
 import com.payflow.app.repository.PasswordResetTokenRepository;
 import com.payflow.app.repository.UserRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -28,6 +29,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 	private final BCryptPasswordEncoder encoder;
 
 	@Override
+	@Transactional
 	public void requestPasswordReset(ForgotPasswordRequest request) {
 		User user = userRepository.findByEmail(request.getEmail())
 				.orElseThrow(() -> new NotFoundException("User not found"));
