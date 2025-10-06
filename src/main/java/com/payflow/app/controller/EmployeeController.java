@@ -38,29 +38,40 @@ public class EmployeeController {
 
 	@PostMapping
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@Operation(summary = "Create a new employee", description = "This endpoint allows an ORG_ADMIN to create a new employee in the organization.")
+	@Operation(
+		summary = "Create a new employee",
+		description = "Allows an ORG_ADMIN to create a new employee by providing their personal and organizational details."
+	)
 	public ResponseEntity<EmployeeResponseDTO> create(@Valid @RequestBody CreateEmployeeRequestDTO req) {
 		return ResponseEntity.ok(employeeService.createEmployee(req));
 	}
 
 	@GetMapping
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@Operation(summary = "Get a list of all employees", description = "This endpoint returns a list of all employees in the organization.")
+	@Operation(
+		summary = "List all employees",
+		description = "Fetches a list of all employees registered under the current organization."
+	)
 	public ResponseEntity<List<EmployeeResponseDTO>> listAll() {
 		return ResponseEntity.ok(employeeService.getAllEmployees());
 	}
 
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@Operation(summary = "Get details of an employee by ID", description = "This endpoint fetches the details of an employee identified by the provided ID.")
+	@Operation(
+		summary = "Get employee by ID",
+		description = "Fetches detailed information about a specific employee using their ID."
+	)
 	public ResponseEntity<EmployeeResponseDTO> getById(@PathVariable Long id) {
 		return ResponseEntity.ok(employeeService.getEmployeeById(id));
 	}
 
 	@PutMapping("/{id}")
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@Operation(summary = "Update employee details", description = "This endpoint allows an ORG_ADMIN to update an existing employee's details.")
-
+	@Operation(
+		summary = "Update employee details",
+		description = "Updates the information of an existing employee identified by their ID."
+	)
 	public ResponseEntity<EmployeeResponseDTO> update(@PathVariable Long id,
 			@Valid @RequestBody CreateEmployeeRequestDTO req) {
 		return ResponseEntity.ok(employeeService.updateEmployee(id, req));
@@ -68,7 +79,10 @@ public class EmployeeController {
 
 	@DeleteMapping("/{id}")
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@Operation(summary = "Delete an employee by ID", description = "This endpoint allows an ORG_ADMIN to delete an employee identified by the provided ID.")
+	@Operation(
+		summary = "Delete an employee",
+		description = "Removes an employee from the organization using their ID."
+	)
 	public ResponseEntity<Void> delete(@PathVariable Long id) {
 		employeeService.deleteEmployee(id);
 		return ResponseEntity.noContent().build();
@@ -78,7 +92,10 @@ public class EmployeeController {
 
 	@PostMapping("/{id}/salary-structures")
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@Operation(summary = "Add salary structure for an employee", description = "This endpoint allows an ORG_ADMIN to add a salary structure for a specific employee.")
+	@Operation(
+		summary = "Add salary structure for employee",
+		description = "Adds a salary structure for a specific employee. Useful for tracking salary components and configurations."
+	)
 	public ResponseEntity<EmployeeSalaryStructureResponseDTO> addSalaryStructure(@PathVariable Long id,
 			@Valid @RequestBody EmployeeSalaryStructureRequestDTO req) {
 		return ResponseEntity.ok(employeeService.addSalaryStructure(id, req));
@@ -86,26 +103,37 @@ public class EmployeeController {
 
 	@GetMapping("/{id}/salary-structures")
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@Operation(summary = "Get salary structures of an employee", description = "This endpoint returns all salary structures associated with a specific employee.")
+	@Operation(
+		summary = "Get employee's salary structures",
+		description = "Retrieves all salary structures associated with a given employee."
+	)
 	public ResponseEntity<List<EmployeeSalaryStructureResponseDTO>> getSalaryStructures(@PathVariable Long id) {
 		return ResponseEntity.ok(employeeService.getSalaryStructures(id));
 	}
 
 	@GetMapping("/salary-account/requests")
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(
+		summary = "Get salary account update requests",
+		description = "Fetches salary account update requests with optional filters like employee name, bank name, request status, and date range."
+	)
 	public ResponseEntity<List<SalaryAccountUpdateRequestResponseDTO>> getSalaryAccountRequests(
-			@RequestParam(required = false) String employeeName, @RequestParam(required = false) String bankName,
+			@RequestParam(required = false) String employeeName,
+			@RequestParam(required = false) String bankName,
 			@RequestParam(required = false) String status,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-		return ResponseEntity.ok(employeeService.getSalaryAccountRequestsWithFilters(employeeName, bankName, status,
-				startDate, endDate));
+		return ResponseEntity.ok(employeeService.getSalaryAccountRequestsWithFilters(
+				employeeName, bankName, status, startDate, endDate));
 	}
-
 
 	@PostMapping("/salary-account/requests/{requestId}/process")
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(
+		summary = "Approve or reject salary account request",
+		description = "Processes a salary account update request by approving or rejecting it based on the request ID."
+	)
 	public ResponseEntity<String> processSalaryAccountRequest(@PathVariable Long requestId,
 			@RequestParam boolean approve) {
 
@@ -117,5 +145,4 @@ public class EmployeeController {
 			return ResponseEntity.badRequest().body("Unable to process the request");
 		}
 	}
-
 }
