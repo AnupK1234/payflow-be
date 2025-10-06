@@ -183,8 +183,56 @@ public class EmployeeSelfServiceImpl implements EmployeeSelfService {
 		salaryAccountUpdateRequestRepository.save(request);
 	}
 
+//	
+
 	@Override
 	public void downloadSalaryHistoryCsv(LocalDate startDate, LocalDate endDate, HttpServletResponse response) {
-		// CSV removed as per requirement
+	    try {
+	        response.setContentType("text/csv");
+	        response.setHeader("Content-Disposition", "attachment; filename=salary_history.csv");
+
+	        User user = getCurrentUser();
+	        Long employeeId = user.getEmployee().getId();
+
+	        List<EmployeeSalaryStructureResponseDTO> allSalaries = salaryStructureRepository
+	                .findByEmployeeId(employeeId).stream()
+	                .map(s -> modelMapper.map(s, EmployeeSalaryStructureResponseDTO.class))
+	                .filter(s -> {
+	                    LocalDate effFrom = s.getEffectiveFrom();
+	                    LocalDate effTo = s.getEffectiveTo() != null ? s.getEffectiveTo() : LocalDate.MAX;
+
+	                    return (startDate == null || !effTo.isBefore(startDate)) &&
+	                           (endDate == null || !effFrom.isAfter(endDate));
+	                })
+	                .sorted(Comparator.comparing(EmployeeSalaryStructureResponseDTO::getEffectiveFrom).reversed())
+	                .collect(Collectors.toList());
+
+	        // Write header
+	        StringBuilder sb = new StringBuilder();
+	        sb.append("Effective From,Effective To,Basic,HRA,DA,PF,Other Allowances,Net Salary,Active\n");
+
+	        for (EmployeeSalaryStructureResponseDTO s : allSalaries) {
+	            sb.append(s.getEffectiveFrom()).append(",");
+	            sb.append(s.getEffectiveTo() != null ? s.getEffectiveTo() : "-").append(",");
+	            sb.append(s.getBasic()).append(",");
+	            sb.append(s.getHra()).append(",");
+	            sb.append(s.getDa()).append(",");
+	            sb.append(s.getPf()).append(",");
+	            sb.append(s.getOtherAllowances() != null ? s.getOtherAllowances() : "-").append(",");
+	            sb.append(s.getNetSalary()).append(",");
+	            sb.append((s.getIsCurrent() != null && s.getIsCurrent()) ? "Yes" : "No").append("\n");
+	        }
+
+	        if (allSalaries.isEmpty()) {
+	            sb.append("No salary found for the selected period.\n");
+	        }
+
+	        response.getWriter().write(sb.toString());
+	        response.getWriter().flush();
+
+	    } catch (IOException e) {
+	        throw new RuntimeException("Error generating CSV: " + e.getMessage());
+	    }
 	}
+
 }

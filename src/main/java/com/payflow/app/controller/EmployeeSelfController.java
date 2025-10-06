@@ -54,16 +54,16 @@ public class EmployeeSelfController {
 		employeeSelfService.downloadSalaryHistoryPdf(startDate, endDate, response);
 	}
 
-//    // Employee: Download salary history CSV
-//    @GetMapping("/salary-history/csv")
-//    @PreAuthorize("hasAuthority('EMPLOYEE')")
-//    public void downloadSalaryHistoryCsv(
-//            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-//            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-//            HttpServletResponse response) {
-//
-//        employeeSelfService.downloadSalaryHistoryCsv(startDate, endDate, response);
-//    }
+    // Employee: Download salary history CSV
+    @GetMapping("/salary-history/csv")
+    @PreAuthorize("hasAuthority('EMPLOYEE')")
+    public void downloadSalaryHistoryCsv(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpServletResponse response) {
+
+        employeeSelfService.downloadSalaryHistoryCsv(startDate, endDate, response);
+    }
 
 	@PostMapping("/salary-account/update-request")
 	@PreAuthorize("hasAuthority('EMPLOYEE')")
