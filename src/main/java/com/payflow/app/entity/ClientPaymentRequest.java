@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.payflow.app.enums.PaymentStatus;
 
 import java.time.LocalDateTime;
 
@@ -41,8 +42,9 @@ public class ClientPaymentRequest {
     @Column(length = 500)
     private String metadata;
 
-    @Column(length = 20)
-    private String status = "PENDING";  
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    private PaymentStatus status = PaymentStatus.PENDING; 
 
     @CreationTimestamp
     @Column(updatable = false)
