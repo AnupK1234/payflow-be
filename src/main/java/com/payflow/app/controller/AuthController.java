@@ -18,6 +18,8 @@ import com.payflow.app.dto.request.ResetPasswordRequest;
 import com.payflow.app.dto.request.VerifyOtpRequest;
 import com.payflow.app.dto.response.UserResponse;
 import com.payflow.app.entity.User;
+import com.payflow.app.enums.Status;
+import com.payflow.app.exception.AccountAccessException;
 import com.payflow.app.security.jwt.JwtService;
 import com.payflow.app.service.PasswordResetService;
 import com.payflow.app.service.UserServiceImpl;
@@ -43,21 +45,53 @@ public class AuthController {
 	@PostMapping("/login")
 	@Operation(summary = "Login user", description = "Authenticates a user with username and password and returns a JWT token for future requests.")
 	public ResponseEntity<?> login(@RequestBody AuthRequest request) {
-		Authentication auth = authenticationManager
-				.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+	    Authentication auth = authenticationManager.authenticate(
+	            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-		UserDetails userDetails = (UserDetails) auth.getPrincipal();
+	    UserDetails userDetails = (UserDetails) auth.getPrincipal();
+	    User userEntity = userService.findByUsername(userDetails.getUsername());
 
-		// 2. Fetch the full User entity from DB using the authenticated username
-		// (This method needs to be implemented in your UserService)
-		User userEntity = userService.findByUsername(userDetails.getUsername());
+	    
+	    switch (userEntity.getRole()) {
 
-		String token = jwtService.generateToken(userDetails, 3600000); // 1 hour
+	        
+	        case ORG_ADMIN -> {
+	            if (userEntity.getOrganization() == null 
+	                || userEntity.getOrganization().getStatus() != Status.VERIFIED) {
+	                throw new AccountAccessException("YOUR ACCOUNT IS NOT YET VERIFIED");
+	            }
+	        }
 
-		UserResponse userDto = modelMapper.map(userEntity, UserResponse.class);
+	       
+	        case EMPLOYEE -> {
+	            if (userEntity.getEmployee() == null 
+	                || !"ACTIVE".equalsIgnoreCase(userEntity.getEmployee().getStatus())) {
+	                throw new AccountAccessException("YOUR ACCOUNT IS NOT ACTIVE");
+	            }
+	        }
 
-		return ResponseEntity.ok(new LoginResponse(token, userDto));
+	       
+	        case CLIENT -> {
+	            if (userEntity.getClient() == null 
+	                || !"ACTIVE".equalsIgnoreCase(userEntity.getClient().getStatus())) {
+	                throw new AccountAccessException("YOUR ACCOUNT IS NOT ACTIVE");
+	            }
+	        }
+
+	        
+	        default -> {
+	            
+	        }
+	    }
+
+	    
+	    String token = jwtService.generateToken(userDetails, 3600000); 
+	    UserResponse userDto = modelMapper.map(userEntity, UserResponse.class);
+
+	    return ResponseEntity.ok(new LoginResponse(token, userDto));
 	}
+
+
 
 	@PostMapping("/forgot-password")
 	@Operation(summary = "Forgot password", description = "Requests a password reset by sending a One-Time Password (OTP) to the user's email address.")

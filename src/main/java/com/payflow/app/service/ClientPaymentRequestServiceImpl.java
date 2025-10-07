@@ -2,16 +2,16 @@ package com.payflow.app.service;
 
 import com.payflow.app.dto.request.ClientPaymentRequestDTO;
 import com.payflow.app.entity.BankAccount;
-import com.payflow.app.entity.ClientPaymentRequest;
 import com.payflow.app.entity.Client;
+import com.payflow.app.entity.ClientPaymentRequest;
 import com.payflow.app.entity.Organization;
+import com.payflow.app.enums.PaymentStatus;
 import com.payflow.app.exception.InsufficientFundsException;
 import com.payflow.app.exception.NotFoundException;
 import com.payflow.app.repository.BankAccountRepository;
 import com.payflow.app.repository.ClientPaymentRequestRepository;
 import com.payflow.app.repository.ClientRepository;
 import com.payflow.app.repository.OrganizationRepository;
-import com.payflow.app.service.ClientPaymentRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Service
+@Service("clientPaymentRequestService")
 @RequiredArgsConstructor
 public class ClientPaymentRequestServiceImpl implements ClientPaymentRequestService {
 
@@ -29,8 +29,8 @@ public class ClientPaymentRequestServiceImpl implements ClientPaymentRequestServ
     private final BankAccountRepository bankRepo;
 
     @Override
-    public ClientPaymentRequest sendPaymentRequest(ClientPaymentRequestDTO dto) {
-        Organization org = orgRepo.findById(dto.getOrganizationId())
+    public ClientPaymentRequest sendPaymentRequest(ClientPaymentRequestDTO dto, Long orgId) {
+        Organization org = orgRepo.findById(orgId)
                 .orElseThrow(() -> new NotFoundException("Organization not found"));
 
         Client client = clientRepo.findById(dto.getClientId())
@@ -42,7 +42,8 @@ public class ClientPaymentRequestServiceImpl implements ClientPaymentRequestServ
                 .amount(dto.getAmount())
                 .reason(dto.getReason())
                 .metadata(dto.getMetadata())
-                .status("PENDING")
+                .status(PaymentStatus.PENDING)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         return requestRepo.save(request);
@@ -50,7 +51,7 @@ public class ClientPaymentRequestServiceImpl implements ClientPaymentRequestServ
 
     @Override
     public List<ClientPaymentRequest> getPendingRequestsForClient(Long clientId) {
-        return requestRepo.findByClientIdAndStatus(clientId, "PENDING");
+        return requestRepo.findByClientIdAndStatus(clientId, PaymentStatus.PENDING);
     }
 
     @Override
@@ -69,17 +70,36 @@ public class ClientPaymentRequestServiceImpl implements ClientPaymentRequestServ
             throw new InsufficientFundsException("Client has insufficient funds");
         }
 
-        // Debit client
         clientAcc.setBalance(clientAcc.getBalance() - req.getAmount());
-        bankRepo.save(clientAcc);
-
-        // Credit organization
         orgAcc.setBalance(orgAcc.getBalance() + req.getAmount());
+
+        bankRepo.save(clientAcc);
         bankRepo.save(orgAcc);
 
-        // Update request status
-        req.setStatus("ACCEPTED");
+        req.setStatus(PaymentStatus.ACCEPTED);
         req.setAcceptedAt(LocalDateTime.now());
+
         return requestRepo.save(req);
+    }
+
+    @Override
+    public List<ClientPaymentRequest> getPaymentHistoryForClient(Long clientId,
+                                                                  LocalDateTime startDate,
+                                                                  LocalDateTime endDate,
+                                                                  PaymentStatus status) {
+
+        if (startDate != null && endDate != null && status != null) {
+            return requestRepo.findByClientIdAndStatusAndCreatedAtBetween(clientId, status, startDate, endDate);
+        } else if (startDate != null && endDate != null) {
+            return requestRepo.findByClientIdAndCreatedAtBetween(clientId, startDate, endDate);
+        } else if (startDate != null) {
+            return requestRepo.findByClientIdAndCreatedAtAfter(clientId, startDate);
+        } else if (endDate != null) {
+            return requestRepo.findByClientIdAndCreatedAtBefore(clientId, endDate);
+        } else if (status != null) {
+            return requestRepo.findByClientIdAndStatus(clientId, status);
+        } else {
+            return requestRepo.findByClientId(clientId);
+        }
     }
 }

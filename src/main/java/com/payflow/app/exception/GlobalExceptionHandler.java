@@ -34,6 +34,13 @@ public class GlobalExceptionHandler {
                 .body(new ApiError(Instant.now(), 400, "Insufficient Funds", ex.getMessage(), req.getRequestURI()));
     }
 
+   
+    @ExceptionHandler(AccountAccessException.class)
+    public ResponseEntity<ApiError> handleAccountAccess(AccountAccessException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ApiError(Instant.now(), 403, "Access Denied", ex.getMessage(), req.getRequestURI()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex, HttpServletRequest req) {
         log.error("Unexpected error", ex);
