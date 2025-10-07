@@ -81,6 +81,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
 		// Update password
 		user.setPasswordHash(encoder.encode(request.getNewPassword()));
+		user.setMustResetPassword(false);
 		userRepository.save(user);
 
 		// Mark OTP as used
