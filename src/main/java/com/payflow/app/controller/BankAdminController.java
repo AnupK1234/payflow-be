@@ -7,11 +7,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.payflow.app.dto.request.OrganizationRequest;
+import com.payflow.app.dto.request.StatusUpdateRequest;
 import com.payflow.app.dto.response.OrganizationResponse;
 import com.payflow.app.service.BankAdminService;
 
@@ -27,7 +29,6 @@ public class BankAdminController {
 
 	private final BankAdminService bankAdminService;
 
-	// List pending orgs
 	@GetMapping("/organizations/pending")
 	@PreAuthorize("hasAuthority('BANK_ADMIN')")
 	@Operation(summary = "Get a list of pending organizations", description = "Fetches all organizations that are currently pending approval.")
@@ -35,7 +36,6 @@ public class BankAdminController {
 		return ResponseEntity.ok(bankAdminService.listPendingOrganizations());
 	}
 
-	// Approve or reject org
 	@PostMapping("/organizations/verify")
 	@PreAuthorize("hasAuthority('BANK_ADMIN')")
 	@Operation(summary = "Approve or reject an organization", description = "Approve or reject an organization based on the provided verification request.")
@@ -43,7 +43,7 @@ public class BankAdminController {
 		return ResponseEntity.ok(bankAdminService.verifyOrganization(request));
 	}
 
-	// Get org details
+	
 	@GetMapping("/organizations/{id}")
 	@PreAuthorize("hasAuthority('BANK_ADMIN')")
 	@Operation(summary = "Get details of a specific organization", description = "Fetches the details of the organization specified by its ID.")
@@ -51,11 +51,20 @@ public class BankAdminController {
 		return ResponseEntity.ok(bankAdminService.getOrganizationDetails(id));
 	}
 
-	// List all organizations
+	
 	@GetMapping("/organizations")
 	@PreAuthorize("hasAuthority('BANK_ADMIN')")
 	@Operation(summary = "Get a list of all organizations", description = "Fetches all the organizations available in the system.")
 	public ResponseEntity<List<OrganizationResponse>> listAllOrganizations() {
 		return ResponseEntity.ok(bankAdminService.listAllOrganizations());
 	}
+	
+	@PutMapping("/organizations/{id}/status")
+    @PreAuthorize("hasAuthority('BANK_ADMIN')")
+    @Operation(summary = "Update organization status", description = "Allows BANK_ADMIN to change an organization's status (e.g., SUSPENDED, VERIFIED).")
+    public ResponseEntity<OrganizationResponse> updateOrganizationStatus(
+            @PathVariable Long id,
+            @RequestBody StatusUpdateRequest request) {
+        return ResponseEntity.ok(bankAdminService.updateOrganizationStatus(id, request.getStatus()));
+    }
 }
