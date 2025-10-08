@@ -43,7 +43,6 @@ public class DepositServiceImpl implements DepositService {
     private final BankAccountRepository bankAccountRepo;
     private final ModelMapper mapper;
 
-    // ---------------- Create Deposit for Org ----------------
     @Override
     public DepositResponse createDepositForOrg(Long orgId, CreateDepositRequest req) {
         Organization org = orgRepo.findById(orgId)
@@ -64,7 +63,7 @@ public class DepositServiceImpl implements DepositService {
         return toResponse(deposit);
     }
 
-    // ---------------- Create Deposit for Client ----------------
+   
     @Override
     public DepositResponse createDepositForClient(Long clientId, CreateDepositRequest req) {
         Client client = clientRepo.findById(clientId)
@@ -85,7 +84,7 @@ public class DepositServiceImpl implements DepositService {
         return toResponse(deposit);
     }
 
-    // ---------------- Approve/Reject Deposit ----------------
+  
     @Override
     public DepositResponse approveDeposit(Long depositId, boolean approve) {
         DepositRequest deposit = depositRepo.findById(depositId)
@@ -119,7 +118,7 @@ public class DepositServiceImpl implements DepositService {
         return toResponse(depositRepo.save(deposit));
     }
 
-    // ---------------- List by Org ----------------
+    
     @Override
     public List<DepositResponse> listByOrg(Long orgId) {
         return depositRepo.findByOrganizationId(orgId).stream()
@@ -161,7 +160,7 @@ public class DepositServiceImpl implements DepositService {
         return deposits.map(this::toResponse);
     }
 
-    // ---------------- List for Logged-in User ----------------
+   
     @Override
     public List<DepositResponse> listDepositsForLoggedInUser() {
         User user = getLoggedUser();
