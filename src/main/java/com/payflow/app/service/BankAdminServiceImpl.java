@@ -62,4 +62,24 @@ public class BankAdminServiceImpl implements BankAdminService {
 	public List<OrganizationResponse> listAllOrganizations() {
 		return organizationRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
 	}
+
+	@Override
+	public OrganizationResponse updateOrganizationStatus(Long organizationId, Status newStatus) {
+		System.out.println("org is :" + organizationId);
+		Organization org = organizationRepository.findById(organizationId)
+				.orElseThrow(() -> new NotFoundException("Organization not found with ID: " + organizationId));
+
+		// Add validation rules if needed
+		if (newStatus == Status.SUSPENDED && org.getStatus() == Status.SUSPENDED) {
+			throw new IllegalStateException("Organization is already suspended.");
+		}
+		if (newStatus == Status.VERIFIED && org.getStatus() == Status.VERIFIED) {
+			throw new IllegalStateException("Organization is already active.");
+		}
+
+		org.setStatus(newStatus);
+		Organization updated = organizationRepository.save(org);
+		return toResponse(updated);
+	}
+
 }

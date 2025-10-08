@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.payflow.app.dto.request.OrganizationRequest;
 import com.payflow.app.dto.response.OrganizationResponse;
+import com.payflow.app.enums.Status;
 
 public interface BankAdminService {
 
@@ -14,4 +15,8 @@ public interface BankAdminService {
 	OrganizationResponse getOrganizationDetails(Long organizationId);
 
 	List<OrganizationResponse> listAllOrganizations();
+
+	OrganizationResponse updateOrganizationStatus(Long id, Status status);
+
+	
 }
