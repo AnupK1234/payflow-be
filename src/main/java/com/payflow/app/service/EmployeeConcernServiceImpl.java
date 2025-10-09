@@ -86,4 +86,12 @@ public class EmployeeConcernServiceImpl implements EmployeeConcernService {
 		return concernRepository.findByOrganizationId(organizationId).stream()
 				.map(concern -> modelMapper.map(concern, ConcernResponseDTO.class)).collect(Collectors.toList());
 	}
+	
+	@Override
+	public Long getOrganizationIdByEmployeeId(Long employeeId) {
+	    Employee employee = employeeRepository.findById(employeeId)
+	            .orElseThrow(() -> new RuntimeException("Employee not found"));
+	    return employee.getOrganization().getId();
+	}
+
 }
