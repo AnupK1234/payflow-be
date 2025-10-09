@@ -22,11 +22,33 @@ public class GlobalExceptionHandler {
                 .body(new ApiError(Instant.now(), 404, "Not Found", ex.getMessage(), req.getRequestURI()));
     }
 
+//    @ExceptionHandler(MethodArgumentNotValidException.class)
+//    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
+//        return ResponseEntity.badRequest()
+//                .body(new ApiError(Instant.now(), 400, "Bad Request", ex.getMessage(), req.getRequestURI()));
+//    }
+    
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
-        return ResponseEntity.badRequest()
-                .body(new ApiError(Instant.now(), 400, "Bad Request", ex.getMessage(), req.getRequestURI()));
+        // Collect all validation error messages
+        String errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getDefaultMessage())
+                .reduce((msg1, msg2) -> msg1 + "; " + msg2)
+                .orElse("Validation failed");
+
+        ApiError apiError = new ApiError(
+                Instant.now(),
+                400,
+                "Bad Request",
+                errors,
+                req.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(apiError);
     }
+
 
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<ApiError> handleInsufficientFunds(InsufficientFundsException ex, HttpServletRequest req) {
