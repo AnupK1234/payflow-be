@@ -30,7 +30,6 @@ public class DepositController {
 
     private final DepositService depositService;
 
-    // ---------------- Create Deposit ----------------
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ORG_ADMIN','CLIENT')")
     @Operation(summary = "Create a deposit request")
@@ -51,7 +50,7 @@ public class DepositController {
         }
     }
 
-    // ---------------- Approve/Reject Deposit ----------------
+    
     @PostMapping("/{depositId}/approve")
     @PreAuthorize("hasAuthority('BANK_ADMIN')")
     @Operation(summary = "Approve or reject a deposit request")
@@ -62,7 +61,7 @@ public class DepositController {
         return ResponseEntity.ok(depositService.approveDeposit(depositId, approve));
     }
 
-    // ---------------- List Deposits for Org ----------------
+    
     @GetMapping("/org")
     @PreAuthorize("hasAuthority('ORG_ADMIN')")
     @Operation(summary = "List all deposits by organization")
@@ -71,7 +70,7 @@ public class DepositController {
         return ResponseEntity.ok(depositService.listByOrg(orgId));
     }
 
-    // ---------------- List Deposits for Client ----------------
+    
     @GetMapping("/client")
     @PreAuthorize("hasAuthority('CLIENT')")
     @Operation(summary = "List all deposits by client")
@@ -80,7 +79,7 @@ public class DepositController {
         return ResponseEntity.ok(depositService.listByClient(clientId));
     }
 
-    // ---------------- List Deposits for Bank ----------------
+ 
     @GetMapping("/bank")
     @PreAuthorize("hasAuthority('BANK_ADMIN')")
     @Operation(summary = "List all deposits across organizations and clients")
