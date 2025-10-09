@@ -48,4 +48,7 @@ public class User {
     @OneToOne
     @JoinColumn(name = "client_id")
     private Client client;
+    
+   
+
 }
