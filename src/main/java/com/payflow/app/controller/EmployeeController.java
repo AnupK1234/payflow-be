@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.payflow.app.dto.request.CreateEmployeeRequestDTO;
 import com.payflow.app.dto.request.EmployeeSalaryStructureRequestDTO;
+import com.payflow.app.dto.request.UpdateEmployeeRequestDTO;
 import com.payflow.app.dto.response.EmployeeResponseDTO;
 import com.payflow.app.dto.response.EmployeeSalaryStructureResponseDTO;
 import com.payflow.app.dto.response.SalaryAccountUpdateRequestResponseDTO;
@@ -73,7 +74,7 @@ public class EmployeeController {
 		description = "Updates the information of an existing employee identified by their ID."
 	)
 	public ResponseEntity<EmployeeResponseDTO> update(@PathVariable Long id,
-			@Valid @RequestBody CreateEmployeeRequestDTO req) {
+			@Valid @RequestBody UpdateEmployeeRequestDTO req) {
 		return ResponseEntity.ok(employeeService.updateEmployee(id, req));
 	}
 
