@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.payflow.app.dto.request.CreateEmployeeRequestDTO;
 import com.payflow.app.dto.request.EmployeeSalaryStructureRequestDTO;
+import com.payflow.app.dto.request.UpdateEmployeeRequestDTO;
 import com.payflow.app.dto.response.*;
 import com.payflow.app.entity.*;
 import com.payflow.app.enums.Role;
@@ -78,7 +79,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public EmployeeResponseDTO updateEmployee(Long id, CreateEmployeeRequestDTO req) {
+    public EmployeeResponseDTO updateEmployee(Long id, UpdateEmployeeRequestDTO req) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
 

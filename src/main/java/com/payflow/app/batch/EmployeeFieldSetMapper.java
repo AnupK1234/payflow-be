@@ -23,8 +23,7 @@ public class EmployeeFieldSetMapper implements FieldSetMapper<CreateEmployeeRequ
 		// Note: Field names must match the names set in the DelimitedLineTokenizer.
 		BankAccountRequestDTO bankAccountDTO = BankAccountRequestDTO.builder()
 				.accountNumber(fieldSet.readString("bankAccount.accountNumber"))
-				.ifsc(fieldSet.readString("bankAccount.ifsc")).status(fieldSet.readString("bankAccount.status"))
-				.build();
+				.ifsc(fieldSet.readString("bankAccount.ifsc")).build();
 
 		// 2. Handle Date Conversion
 		// Use the explicit formatter to convert the date string to LocalDate
@@ -35,7 +34,6 @@ public class EmployeeFieldSetMapper implements FieldSetMapper<CreateEmployeeRequ
 				.email(fieldSet.readString("email")).employeeCode(fieldSet.readString("employeeCode"))
 				.dateOfJoining(dateOfJoining) // The correctly parsed LocalDate
 				.jobTitle(fieldSet.readString("jobTitle")).department(fieldSet.readString("department"))
-				.status(fieldSet.readString("status"))
 
 				// NOTE: The next two fields show scientific notation in your raw data
 				// We use readString() to maintain their full value and prevent loss of

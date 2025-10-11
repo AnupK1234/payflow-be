@@ -89,7 +89,6 @@ public class OrganizationServiceImpl implements OrganizationService {
                     .ownerType(Role.ORG_ADMIN)
                     .accountNumberEnc(bankReq.getAccountNumber())
                     .ifsc(bankReq.getIfsc())
-                    .status(bankReq.getStatus())
                     .build();
             org.setBankAccounts(List.of(bankAccount));
         }
@@ -159,7 +158,6 @@ public class OrganizationServiceImpl implements OrganizationService {
                     .ownerType(Role.ORG_ADMIN)
                     .accountNumberEnc(bankReq.getAccountNumber())
                     .ifsc(bankReq.getIfsc())
-                    .status(bankReq.getStatus())
                     .build();
             org.getBankAccounts().add(bankAccount);
         }
