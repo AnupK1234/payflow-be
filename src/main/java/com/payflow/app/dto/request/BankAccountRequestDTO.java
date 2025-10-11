@@ -16,7 +16,4 @@ public class BankAccountRequestDTO {
 	@Pattern(regexp = "^[A-Z]{4}0[A-Z0-9]{6}$", message = "Invalid IFSC code")
 	private String ifsc;
 
-	@NotBlank
-	private String status;
-
 }

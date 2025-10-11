@@ -30,10 +30,7 @@ public class CreateEmployeeRequestDTO {
 
     @NotBlank
     private String department;
-
-    @NotBlank
-    private String status; 
-
+    
     @Size(min = 12, max = 12)
     private String aadhaarNumber;
 
