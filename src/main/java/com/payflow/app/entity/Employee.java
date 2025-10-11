@@ -48,7 +48,7 @@ public class Employee {
 
     @NotNull
     @Column(nullable = false, length = 20)
-    private String status = "Active";
+    private String status = "ACTIVE";
 
     @Size(min = 12, max = 12, message = "Aadhaar must be 12 digits")
     @Column(unique = true, length = 12)

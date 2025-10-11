@@ -133,7 +133,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (!employeeRepository.existsById(id)) {
             throw new NotFoundException("Employee not found with id: " + id);
         }
-        employeeRepository.deleteById(id);
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
+
+        employee.setIsDeleted(true);
+        employee.setStatus("INACTIVE");
+        employeeRepository.save(employee);
     }
 
     // Salary Structure 
