@@ -1,12 +1,15 @@
 package com.payflow.app.service;
 
 import org.springframework.data.domain.Page;
+
 import com.payflow.app.dto.request.SalaryDisbursementRequestActionDTO;
 import com.payflow.app.dto.response.SalaryDisbursementResponseDTO;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 public interface SalaryDisbursementService {
 
-    SalaryDisbursementResponseDTO createRequest(Long orgId);
+    SalaryDisbursementResponseDTO createRequest(HttpServletRequest request);
 
     void approveRequest(Long requestId) throws Exception;
 

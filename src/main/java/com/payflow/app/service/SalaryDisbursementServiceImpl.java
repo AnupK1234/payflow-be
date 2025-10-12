@@ -2,25 +2,27 @@ package com.payflow.app.service;
 
 import java.time.LocalDateTime;
 
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobParameters;
-import org.springframework.batch.core.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
 
 import com.payflow.app.dto.request.SalaryDisbursementRequestActionDTO;
 import com.payflow.app.dto.response.SalaryDisbursementResponseDTO;
+import com.payflow.app.dto.response.UserResponse;
 import com.payflow.app.entity.Organization;
 import com.payflow.app.entity.SalaryDisbursementRequest;
 import com.payflow.app.enums.DisbursementStatus;
 import com.payflow.app.repository.OrganizationRepository;
 import com.payflow.app.repository.SalaryDisbursementRequestRepository;
-import com.payflow.app.service.SalaryDisbursementService;
+import com.payflow.app.security.util.CurrentUserUtil;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -31,9 +33,12 @@ public class SalaryDisbursementServiceImpl implements SalaryDisbursementService 
     private final OrganizationRepository orgRepo;
     private final JobLauncher jobLauncher;
     private final Job salaryDisbursementJob;
+    private final CurrentUserUtil currentUserUtil;
 
     @Override
-    public SalaryDisbursementResponseDTO createRequest(Long orgId) {
+    public SalaryDisbursementResponseDTO createRequest(HttpServletRequest request) {
+    	UserResponse user = currentUserUtil.getCurrentUser(request);
+    	Long orgId = user.getOrganizationId();
         Organization org = orgRepo.findById(orgId)
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
 
