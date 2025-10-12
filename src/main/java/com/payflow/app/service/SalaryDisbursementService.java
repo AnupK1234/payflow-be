@@ -18,4 +18,6 @@ public interface SalaryDisbursementService {
     void takeAction(Long requestId, SalaryDisbursementRequestActionDTO action) throws Exception;
 
     Page<SalaryDisbursementResponseDTO> listRequests(String status, int page, int size);
+    
+    public Page<SalaryDisbursementResponseDTO> listRequestsByOrganization(String status, int page, int size, HttpServletRequest request);
 }

@@ -109,6 +109,34 @@ public class SalaryDisbursementServiceImpl implements SalaryDisbursementService 
 
         return pageResult.map(this::mapToDTO);
     }
+    
+    @Override
+    public Page<SalaryDisbursementResponseDTO> listRequestsByOrganization(String status, int page, int size, HttpServletRequest request) {
+        // Extract the current user from token
+        UserResponse currentUser = currentUserUtil.getCurrentUser(request);
+        Long orgId = currentUser.getOrganizationId();
+
+        Organization org = orgRepo.findById(orgId)
+                .orElseThrow(() -> new RuntimeException("Organization not found"));
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "requestDate"));
+        Page<SalaryDisbursementRequest> pageResult;
+
+        if ("ALL".equalsIgnoreCase(status)) {
+            pageResult = requestRepo.findByOrganization(org, pageable);
+        } else {
+            DisbursementStatus filterStatus;
+            try {
+                filterStatus = DisbursementStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid status");
+            }
+            pageResult = requestRepo.findByOrganizationAndStatus(org, filterStatus, pageable);
+        }
+
+        return pageResult.map(this::mapToDTO);
+    }
+
 
     private SalaryDisbursementResponseDTO mapToDTO(SalaryDisbursementRequest req) {
         return SalaryDisbursementResponseDTO.builder()

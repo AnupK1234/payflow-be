@@ -64,4 +64,15 @@ public class SalaryDisbursementController {
 		Page<SalaryDisbursementResponseDTO> responsePage = salaryDisbursementService.listRequests(status, page, size);
 		return ResponseEntity.ok(responsePage);
 	}
+
+	@GetMapping("/organization/requests")
+	@PreAuthorize("hasAuthority('ORG_ADMIN')")
+	@Operation(summary = "Get paginated disbursement requests for the user's organization")
+	public ResponseEntity<Page<SalaryDisbursementResponseDTO>> listRequestsForOrganization(
+			@RequestParam(defaultValue = "ALL") String status, @RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size, HttpServletRequest request) {
+
+		return ResponseEntity.ok(salaryDisbursementService.listRequestsByOrganization(status, page, size, request));
+	}
+
 }
