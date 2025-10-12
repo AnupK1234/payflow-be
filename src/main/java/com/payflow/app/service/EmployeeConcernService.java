@@ -15,4 +15,6 @@ public interface EmployeeConcernService {
 	List<ConcernResponseDTO> getConcernsByEmployee(Long employeeId);
 
 	List<ConcernResponseDTO> getConcernsByOrganization(Long organizationId);
+	
+	Long getOrganizationIdByEmployeeId(Long employeeId);
 }

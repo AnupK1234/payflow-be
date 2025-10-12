@@ -80,16 +80,14 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeResponseDTO updateEmployee(Long id, UpdateEmployeeRequestDTO req) {
+  
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Employee not found with id: " + id));
 
-        modelMapper.map(req, employee);
+        this.modelMapper.typeMap(UpdateEmployeeRequestDTO.class, Employee.class)
+        .addMappings(mapper -> mapper.skip(Employee::setId));
+        this.modelMapper.map(req, employee);
 
-        if (!employee.getOrganization().getId().equals(req.getOrganizationId())) {
-            Organization org = organizationRepository.findById(req.getOrganizationId())
-                    .orElseThrow(() -> new NotFoundException("Organization not found with id: " + req.getOrganizationId()));
-            employee.setOrganization(org);
-        }
 
         if (req.getBankAccount() != null && req.getBankAccount().getAccountNumber() != null) {
             employee.getBankAccounts().forEach(acc -> acc.setStatus("INACTIVE"));

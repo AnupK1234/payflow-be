@@ -28,37 +28,44 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "Employee Concerns", description = "APIs to manage employee concerns in the organization")
 public class EmployeeConcernController {
 
-	private final EmployeeConcernService concernService;
+    private final EmployeeConcernService concernService;
 
-	@PostMapping(value = "/raise", consumes = "multipart/form-data")
-	@PreAuthorize("hasAuthority('EMPLOYEE')")
-	@Operation(summary = "Raise a concern", description = "This endpoint allows an EMPLOYEE to raise a new concern with optional attachment.")
-	public ResponseEntity<ConcernResponseDTO> raiseConcern(@RequestPart("data") String dataJson,
-			@RequestPart(value = "attachment", required = false) MultipartFile attachment) {
+    @PostMapping(value = "/raise", consumes = "multipart/form-data")
+    @PreAuthorize("hasAuthority('EMPLOYEE')")
+    @Operation(summary = "Raise a concern", description = "This endpoint allows an EMPLOYEE to raise a new concern with optional attachment.")
+    public ResponseEntity<ConcernResponseDTO> raiseConcern(@RequestPart("data") String dataJson,
+                                                           @RequestPart(value = "attachment", required = false) MultipartFile attachment) {
+        return ResponseEntity.ok(concernService.raiseConcern(dataJson, attachment));
+    }
 
-		return ResponseEntity.ok(concernService.raiseConcern(dataJson, attachment));
-	}
+    @PreAuthorize("hasAuthority('ORG_ADMIN')")
+    @PutMapping("/{concernId}/status")
+    @Operation(summary = "Update the status of a concern", description = "This endpoint allows ORG_ADMIN to update the status of a concern identified by its ID.")
+    public ResponseEntity<ConcernResponseDTO> updateStatus(@PathVariable Long concernId,
+                                                           @RequestBody UpdateConcernStatusRequestDTO requestDTO) {
+        return ResponseEntity.ok(concernService.updateConcernStatus(concernId, requestDTO));
+    }
 
-	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@PutMapping("/{concernId}/status")
-	@Operation(summary = "Update the status of a concern", description = "This endpoint allows ORG_ADMIN to update the status of a concern identified by its ID.")
-	public ResponseEntity<ConcernResponseDTO> updateStatus(@PathVariable Long concernId,
-			@RequestBody UpdateConcernStatusRequestDTO requestDTO) {
-		return ResponseEntity.ok(concernService.updateConcernStatus(concernId, requestDTO));
-	}
+    @PreAuthorize("hasAuthority('ORG_ADMIN')")
+    @GetMapping("/employee/{employeeId}")
+    @Operation(summary = "Get concerns by employee", description = "This endpoint returns a list of all concerns raised by a specific employee, identified by their ID.")
+    public ResponseEntity<List<ConcernResponseDTO>> getConcernsByEmployee(@PathVariable Long employeeId) {
+        return ResponseEntity.ok(concernService.getConcernsByEmployee(employeeId));
+    }
 
-	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@GetMapping("/employee/{employeeId}")
-	@Operation(summary = "Get concerns by employee", description = "This endpoint returns a list of all concerns raised by a specific employee, identified by their ID.")
+    @PreAuthorize("hasAuthority('ORG_ADMIN')")
+    @GetMapping("/organization/{organizationId}")
+    @Operation(summary = "Get concerns by organization", description = "This endpoint returns a list of all concerns raised within a specific organization, identified by its ID.")
+    public ResponseEntity<List<ConcernResponseDTO>> getConcernsByOrganization(@PathVariable Long organizationId) {
+        return ResponseEntity.ok(concernService.getConcernsByOrganization(organizationId));
+    }
 
-	public ResponseEntity<List<ConcernResponseDTO>> getConcernsByEmployee(@PathVariable Long employeeId) {
-		return ResponseEntity.ok(concernService.getConcernsByEmployee(employeeId));
-	}
-
-	@PreAuthorize("hasAuthority('ORG_ADMIN')")
-	@GetMapping("/organization/{organizationId}")
-	@Operation(summary = "Get concerns by organization", description = "This endpoint returns a list of all concerns raised within a specific organization, identified by its ID.")
-	public ResponseEntity<List<ConcernResponseDTO>> getConcernsByOrganization(@PathVariable Long organizationId) {
-		return ResponseEntity.ok(concernService.getConcernsByOrganization(organizationId));
-	}
+    
+    @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ORG_ADMIN')")
+    @GetMapping("/employee/{employeeId}/organization")
+    @Operation(summary = "Get organization ID by employee", description = "This endpoint returns the organization ID for a given employee ID.")
+    public ResponseEntity<Long> getOrganizationIdByEmployee(@PathVariable Long employeeId) {
+        Long organizationId = concernService.getOrganizationIdByEmployeeId(employeeId);
+        return ResponseEntity.ok(organizationId);
+    }
 }
