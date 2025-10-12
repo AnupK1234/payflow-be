@@ -6,9 +6,15 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.payflow.app.dto.response.UserResponse;
+import com.payflow.app.entity.User;
+import com.payflow.app.repository.UserRepository;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -21,6 +27,9 @@ import lombok.RequiredArgsConstructor;
 public class JwtService {
 
 	private final Environment env;
+	private final UserRepository userRepository;
+	private final ModelMapper modelMapper;
+	private final ObjectMapper objectMapper;
 
 	private SecretKey key() {
 		String secret = env.getProperty("app.jwt.secret");
@@ -31,11 +40,22 @@ public class JwtService {
 	public String generateToken(UserDetails user, long expirationMs) {
 		Instant now = Instant.now();
 
-		return Jwts.builder().subject(user.getUsername()).issuedAt(Date.from(now))
-				.expiration(Date.from(now.plusMillis(expirationMs)))
-				.claim("role", user.getAuthorities().iterator().next().getAuthority()) // only one role
-				.signWith(key()) // algorithm inferred from key
-				.compact();
+		try {
+			User userObj = userRepository.findByUsername(user.getUsername())
+					.orElseThrow(() -> new RuntimeException("User not found"));
+
+			UserResponse userResponse = modelMapper.map(userObj, UserResponse.class);
+			String userJson = objectMapper.writeValueAsString(userResponse);
+
+			return Jwts.builder().subject(user.getUsername()).issuedAt(Date.from(now))
+					.expiration(Date.from(now.plusMillis(expirationMs)))
+					.claim("role", user.getAuthorities().iterator().next().getAuthority()) // only one role
+					.claim("user", userJson).signWith(key()) // algorithm inferred from key
+					.compact();
+
+		} catch (Exception e) {
+			return "";
+		}
 	}
 
 	public String extractUsername(String token) {
@@ -44,6 +64,11 @@ public class JwtService {
 
 	public String extractRole(String token) {
 		return parse(token).getPayload().get("role", String.class);
+	}
+
+	public UserResponse extractUser(String token) throws Exception {
+		String userJson = parse(token).getPayload().get("user", String.class);
+		return objectMapper.readValue(userJson, UserResponse.class);
 	}
 
 	public boolean isValid(String token, UserDetails user) {
