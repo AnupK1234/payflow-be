@@ -25,9 +25,6 @@ public class UpdateEmployeeRequestDTO {
 
     @Pattern(regexp = "^[A-Z]{5}[0-9]{4}[A-Z]{1}$", message = "Invalid PAN format")
     private String panNumber;
-
-    @NotNull
-    private Long organizationId; 
     
     @Valid
     private BankAccountRequestDTO bankAccount;   
