@@ -15,6 +15,8 @@ public interface ClientPaymentRequestService {
 
     ClientPaymentRequest acceptPaymentRequest(Long requestId, Long clientBankAccountId);
 
+    ClientPaymentRequest rejectPaymentRequest(Long requestId);
+
     List<ClientPaymentRequest> getPaymentHistoryForClient(Long clientId,
                                                           LocalDateTime startDate,
                                                           LocalDateTime endDate,

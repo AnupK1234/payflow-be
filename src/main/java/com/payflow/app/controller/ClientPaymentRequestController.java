@@ -1,8 +1,11 @@
 package com.payflow.app.controller;
 
 import com.payflow.app.dto.request.ClientPaymentRequestDTO;
+import com.payflow.app.entity.BankAccount;
 import com.payflow.app.entity.ClientPaymentRequest;
 import com.payflow.app.enums.PaymentStatus;
+import com.payflow.app.enums.Role;
+import com.payflow.app.repository.BankAccountRepository;
 import com.payflow.app.service.ClientPaymentRequestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,19 +18,23 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/api/payment-requests")
 @Tag(name = "Client Payment Requests", description = "APIs for managing client payment requests and approvals")
 public class ClientPaymentRequestController {
 
     private final ClientPaymentRequestService requestService;
+    private final BankAccountRepository bankAccountRepository;
 
-    // Use constructor injection with @Qualifier
     public ClientPaymentRequestController(
-            @Qualifier("clientPaymentRequestService") ClientPaymentRequestService requestService) {
+            @Qualifier("clientPaymentRequestService") ClientPaymentRequestService requestService,
+            BankAccountRepository bankAccountRepository) {
         this.requestService = requestService;
+        this.bankAccountRepository = bankAccountRepository;
     }
 
+    
     @PostMapping("/send")
     @PreAuthorize("hasAuthority('ORG_ADMIN')")
     @Operation(summary = "Send a payment request to a client",
@@ -38,6 +45,7 @@ public class ClientPaymentRequestController {
         return ResponseEntity.ok(requestService.sendPaymentRequest(requestDTO, orgId));
     }
 
+   
     @GetMapping("/client/{clientId}/pending")
     @PreAuthorize("hasAnyAuthority('CLIENT','ORG_ADMIN')")
     @Operation(summary = "Get pending payment requests",
@@ -56,6 +64,7 @@ public class ClientPaymentRequestController {
         return ResponseEntity.ok(requestService.acceptPaymentRequest(requestId, clientBankAccountId));
     }
 
+    
     @GetMapping("/client/{clientId}/history")
     @PreAuthorize("hasAnyAuthority('CLIENT','ORG_ADMIN')")
     @Operation(summary = "Get client payment history",
@@ -67,4 +76,32 @@ public class ClientPaymentRequestController {
             @RequestParam(required = false) PaymentStatus status) {
         return ResponseEntity.ok(requestService.getPaymentHistoryForClient(clientId, startDate, endDate, status));
     }
+
+   
+    @GetMapping("/client/{clientId}/bank-accounts")
+    @PreAuthorize("hasAuthority('CLIENT')")
+    @Operation(summary = "Get client's active bank accounts",
+               description = "Fetch all active bank accounts associated with a client.")
+    public ResponseEntity<List<BankAccount>> getClientBankAccounts(@PathVariable Long clientId) {
+        
+        List<BankAccount> accounts = bankAccountRepository
+                .findAllByClientIdAndOwnerTypeAndStatusIgnoreCase(clientId, Role.CLIENT, "ACTIVE");
+
+        if (accounts.isEmpty()) {
+            System.out.println("No active bank accounts found for client " + clientId);
+        } else {
+            System.out.println("Bank accounts fetched for client " + clientId + ": " + accounts.size());
+        }
+
+        return ResponseEntity.ok(accounts);
+    }
+    
+    @PostMapping("/{requestId}/reject")
+    @PreAuthorize("hasAuthority('CLIENT')")
+    @Operation(summary = "Reject a payment request",
+               description = "Client rejects a payment request by providing request ID.")
+    public ResponseEntity<ClientPaymentRequest> rejectRequest(@PathVariable Long requestId) {
+        return ResponseEntity.ok(requestService.rejectPaymentRequest(requestId));
+    }
+
 }

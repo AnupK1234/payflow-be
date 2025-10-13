@@ -33,7 +33,7 @@ public class BankAccount {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", nullable = true)
-    @JsonBackReference   // <-- prevents infinite recursion
+    @JsonBackReference   
     private Client client;
 
     @Column(name = "account_number_enc", nullable = false, length = 100)
