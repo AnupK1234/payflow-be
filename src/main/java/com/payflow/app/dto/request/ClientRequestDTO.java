@@ -37,7 +37,6 @@ public class ClientRequestDTO {
     private String status;
     private Boolean isDeleted;
 
-    @NotNull
     private Long organizationId;
 
     private BankAccountRequestDTO bankAccount;
