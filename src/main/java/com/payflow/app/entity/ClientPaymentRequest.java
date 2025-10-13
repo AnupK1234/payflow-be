@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ClientPaymentRequest {
 
-    @Id
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -50,5 +50,7 @@ public class ClientPaymentRequest {
     @Column(updatable = false)
     private LocalDateTime createdAt;   
 
-    private LocalDateTime acceptedAt;   
+    private LocalDateTime acceptedAt;  
+
+    private LocalDateTime rejectedAt;   
 }

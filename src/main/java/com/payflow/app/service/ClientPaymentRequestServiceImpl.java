@@ -102,4 +102,18 @@ public class ClientPaymentRequestServiceImpl implements ClientPaymentRequestServ
             return requestRepo.findByClientId(clientId);
         }
     }
+    
+    @Override
+    @Transactional
+    public ClientPaymentRequest rejectPaymentRequest(Long requestId) {
+        ClientPaymentRequest request = requestRepo.findById(requestId)
+                .orElseThrow(() -> new NotFoundException("Payment request not found"));
+
+        request.setStatus(PaymentStatus.REJECTED);
+        request.setRejectedAt(LocalDateTime.now()); // optional, if you have a rejectedAt field
+
+        return requestRepo.save(request);
+    }
+
+
 }
