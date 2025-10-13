@@ -23,6 +23,7 @@ import com.payflow.app.service.ClientService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -48,9 +49,8 @@ public class ClientController {
     @PostMapping
     @PreAuthorize("hasAuthority('ORG_ADMIN')")
     @Operation(summary = "Create a new client", description = "This endpoint allows ORG_ADMIN to create a new client in the system.")
-    public ResponseEntity<ClientResponseDTO> create(@Valid @RequestBody ClientRequestDTO req) {
-        Long orgId = getLoggedInOrganizationId();
-        return ResponseEntity.ok(clientService.createClient(req, orgId));
+    public ResponseEntity<ClientResponseDTO> create(@Valid @RequestBody ClientRequestDTO req, HttpServletRequest request) {
+        return ResponseEntity.ok(clientService.createClient(req, request));
     }
 
     // ORG_ADMIN: Get all clients
@@ -75,9 +75,9 @@ public class ClientController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ORG_ADMIN')")
     @Operation(summary = "Update client details", description = "This endpoint allows ORG_ADMIN to update the details of an existing client identified by ID.")
-    public ResponseEntity<ClientResponseDTO> update(@PathVariable Long id, @Valid @RequestBody ClientRequestDTO req) {
+    public ResponseEntity<ClientResponseDTO> update(@PathVariable Long id, @Valid @RequestBody ClientRequestDTO req, HttpServletRequest request) {
         Long orgId = getLoggedInOrganizationId();
-        return ResponseEntity.ok(clientService.updateClient(id, req, orgId));
+        return ResponseEntity.ok(clientService.updateClient(id, req, request));
     }
 
     // ORG_ADMIN: Delete client

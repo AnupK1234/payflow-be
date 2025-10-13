@@ -8,9 +8,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.payflow.app.dto.request.ClientRequestDTO;
 import com.payflow.app.dto.request.BankAccountRequestDTO;
+import com.payflow.app.dto.request.ClientRequestDTO;
 import com.payflow.app.dto.response.ClientResponseDTO;
+import com.payflow.app.dto.response.UserResponse;
 import com.payflow.app.entity.BankAccount;
 import com.payflow.app.entity.Client;
 import com.payflow.app.entity.Organization;
@@ -21,7 +22,9 @@ import com.payflow.app.repository.BankAccountRepository;
 import com.payflow.app.repository.ClientRepository;
 import com.payflow.app.repository.OrganizationRepository;
 import com.payflow.app.repository.UserRepository;
+import com.payflow.app.security.util.CurrentUserUtil;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -35,16 +38,22 @@ public class ClientServiceImpl implements ClientService {
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder encoder;
+    private final CurrentUserUtil currentUser;
 
-    // ---------------- Create Client ----------------
+    
     @Override
-    public ClientResponseDTO createClient(ClientRequestDTO req, Long organizationId) {
+    public ClientResponseDTO createClient(ClientRequestDTO req, HttpServletRequest request) {
+    	UserResponse user = currentUser.getCurrentUser(request);
+    	Long organizationId = user.getOrganizationId();
+    	req.setOrganizationId(organizationId);
+    	
         Organization org = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new NotFoundException("Organization not found with id: " + organizationId));
 
         Client client = modelMapper.map(req, Client.class);
         client.setId(null);
         client.setOrganization(org);
+        client.setIsDeleted(false);
 
         client = clientRepository.save(client);
 
@@ -77,7 +86,7 @@ public class ClientServiceImpl implements ClientService {
         return modelMapper.map(client, ClientResponseDTO.class);
     }
 
-    // ---------------- Get All Clients ----------------
+   
     @Override
     public List<ClientResponseDTO> getAllClients(Long organizationId) {
         return clientRepository.findByOrganizationIdAndIsDeletedFalse(organizationId)
@@ -86,7 +95,7 @@ public class ClientServiceImpl implements ClientService {
                 .collect(Collectors.toList());
     }
 
-    // ---------------- Get Client By ID ----------------
+   
     @Override
     public ClientResponseDTO getClientById(Long id, Long organizationId) {
         Client client = clientRepository.findByIdAndOrganizationIdAndIsDeletedFalse(id, organizationId)
@@ -94,9 +103,10 @@ public class ClientServiceImpl implements ClientService {
         return modelMapper.map(client, ClientResponseDTO.class);
     }
 
-    // ---------------- Update Client ----------------
     @Override
-    public ClientResponseDTO updateClient(Long id, ClientRequestDTO req, Long organizationId) {
+    public ClientResponseDTO updateClient(Long id, ClientRequestDTO req, HttpServletRequest request) {
+    	UserResponse user = currentUser.getCurrentUser(request);
+    	Long organizationId = user.getOrganizationId();
         Client client = clientRepository.findByIdAndOrganizationIdAndIsDeletedFalse(id, organizationId)
                 .orElseThrow(() -> new NotFoundException("Client not found with id: " + id + " in your organization"));
 
@@ -131,7 +141,6 @@ public class ClientServiceImpl implements ClientService {
         return modelMapper.map(client, ClientResponseDTO.class);
     }
 
-    // ---------------- Delete Client ----------------
     @Override
     public void deleteClient(Long id, Long organizationId) {
         Client client = clientRepository.findByIdAndOrganizationIdAndIsDeletedFalse(id, organizationId)
