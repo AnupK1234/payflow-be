@@ -19,6 +19,7 @@ public class UpdateEmployeeRequestDTO {
     private LocalDate dateOfJoining;
     private String jobTitle;
     private String department;
+    private String status;
     
     @Size(min = 12, max = 12)
     private String aadhaarNumber;

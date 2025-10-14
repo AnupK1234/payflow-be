@@ -34,4 +34,6 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 
     Optional<BankAccount> findByEmployeeAndOwnerTypeAndStatus(Employee employee, Role ownerType, String status);
 
+	boolean existsByAccountNumberEnc(String accountNumber);
+
 }
