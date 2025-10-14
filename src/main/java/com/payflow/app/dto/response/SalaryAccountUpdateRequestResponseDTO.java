@@ -14,15 +14,19 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class SalaryAccountUpdateRequestResponseDTO {
+	private Long id;
+	private Long requestId;
+	private Long employeeId;
+	private String employeeName;
+	private String additionalInfo;
+	private String bankName;
+	private String accountNumber;
+	private String ifscCode;
 
-    private Long requestId;
-    private Long employeeId;
-    private String employeeName;
-
-    private String bankName;
-    private String accountNumber;
-    private String ifscCode;
-
-    private String status; // PENDING, APPROVED, REJECTED
-    private LocalDateTime requestedAt;
+	private String status; // PENDING, APPROVED, REJECTED
+	private LocalDateTime requestedAt;
+	private LocalDateTime processedAt;
+	private Long approvedBy;
+	private Long orgId;
+	private String orgName;
 }
