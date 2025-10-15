@@ -25,5 +25,6 @@ public class CreateOrganizationRequest {
 	@NotBlank
 	private String tempPassword;
 	
+	@NotBlank
 	private BankAccountRequestDTO bankAccount;
 }

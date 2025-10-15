@@ -21,8 +21,6 @@ public class EmployeeResponseDTO {
     private String jobTitle;
     private String department;
     private String status;
-    private String bankAccountNumber;
-    private String ifscCode;
     private String aadhaarNumber;
     private String panNumber;
     private String organizationName; 

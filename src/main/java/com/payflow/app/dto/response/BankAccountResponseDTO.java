@@ -8,7 +8,7 @@ import lombok.*;
 @Builder
 public class BankAccountResponseDTO {
 
-    private String accountNumber;  // decrypted if needed
+    private String accountNumber; 
     private String ifsc;
     private String status;
 }

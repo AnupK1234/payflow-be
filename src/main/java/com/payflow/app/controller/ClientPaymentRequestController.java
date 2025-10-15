@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,8 +38,7 @@ public class ClientPaymentRequestController {
     @Operation(summary = "Send a payment request to a client",
                description = "Allows an organization admin to send a payment request to a specific client.")
     public ResponseEntity<ClientPaymentRequest> sendPaymentRequest(
-            @RequestBody ClientPaymentRequestDTO requestDTO,
-            HttpServletRequest request) {
+            @RequestBody ClientPaymentRequestDTO requestDTO, HttpServletRequest request) {
         return ResponseEntity.ok(requestService.sendPaymentRequest(requestDTO, request));
     }
 

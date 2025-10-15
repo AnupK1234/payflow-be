@@ -17,8 +17,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.payflow.app.dto.response.UserResponse;
+import com.payflow.app.security.util.CurrentUserUtil;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,6 +35,7 @@ public class EmployeeBatchController {
 
 	private final JobLauncher jobLauncher;
 	private final Job importEmployeeJob;
+	private final CurrentUserUtil user;
 
 	/**
 	 * API to upload a CSV file and launch the employee import batch job.
@@ -45,8 +50,11 @@ public class EmployeeBatchController {
 	        description = "Input a csv file of employee data and the api creates the employee in db in batches"
 	    )
 	public ResponseEntity<String> importEmployees(@RequestParam("file") MultipartFile file,
-			@RequestParam("organizationId") Long organizationId) {
-
+			HttpServletRequest request) {
+		
+		UserResponse currentUser = user.getCurrentUser(request);
+		Long organizationId = currentUser.getOrganizationId();
+		
 		Path tempFilePath = null;
 		try {
 			// 1. Create a temporary file to hold the uploaded data
