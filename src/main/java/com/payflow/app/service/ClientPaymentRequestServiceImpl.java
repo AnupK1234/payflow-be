@@ -1,6 +1,13 @@
 package com.payflow.app.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.payflow.app.dto.request.ClientPaymentRequestDTO;
+import com.payflow.app.dto.response.UserResponse;
 import com.payflow.app.entity.BankAccount;
 import com.payflow.app.entity.Client;
 import com.payflow.app.entity.ClientPaymentRequest;
@@ -12,108 +19,101 @@ import com.payflow.app.repository.BankAccountRepository;
 import com.payflow.app.repository.ClientPaymentRequestRepository;
 import com.payflow.app.repository.ClientRepository;
 import com.payflow.app.repository.OrganizationRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.payflow.app.security.util.CurrentUserUtil;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 
 @Service("clientPaymentRequestService")
 @RequiredArgsConstructor
 public class ClientPaymentRequestServiceImpl implements ClientPaymentRequestService {
 
-    private final ClientPaymentRequestRepository requestRepo;
-    private final ClientRepository clientRepo;
-    private final OrganizationRepository orgRepo;
-    private final BankAccountRepository bankRepo;
+	private final ClientPaymentRequestRepository requestRepo;
+	private final ClientRepository clientRepo;
+	private final OrganizationRepository orgRepo;
+	private final BankAccountRepository bankRepo;
+	private final CurrentUserUtil currentUser;
 
-    @Override
-    public ClientPaymentRequest sendPaymentRequest(ClientPaymentRequestDTO dto, Long orgId) {
-        Organization org = orgRepo.findById(orgId)
-                .orElseThrow(() -> new NotFoundException("Organization not found"));
+	@Override
+	public ClientPaymentRequest sendPaymentRequest(ClientPaymentRequestDTO dto, HttpServletRequest request) {
 
-        Client client = clientRepo.findById(dto.getClientId())
-                .orElseThrow(() -> new NotFoundException("Client not found"));
+		UserResponse user = currentUser.getCurrentUser(request);
+		Long orgId = user.getOrganizationId();
 
-        ClientPaymentRequest request = ClientPaymentRequest.builder()
-                .organization(org)
-                .client(client)
-                .amount(dto.getAmount())
-                .reason(dto.getReason())
-                .metadata(dto.getMetadata())
-                .status(PaymentStatus.PENDING)
-                .createdAt(LocalDateTime.now())
-                .build();
+		Organization org = orgRepo.findById(orgId).orElseThrow(() -> new NotFoundException("Organization not found"));
 
-        return requestRepo.save(request);
-    }
+		Client client = clientRepo.findById(dto.getClientId())
+				.orElseThrow(() -> new NotFoundException("Client not found"));
 
-    @Override
-    public List<ClientPaymentRequest> getPendingRequestsForClient(Long clientId) {
-        return requestRepo.findByClientIdAndStatus(clientId, PaymentStatus.PENDING);
-    }
+		ClientPaymentRequest payementRequest = ClientPaymentRequest.builder().organization(org).client(client)
+				.amount(dto.getAmount()).reason(dto.getReason()).metadata(dto.getMetadata())
+				.status(PaymentStatus.PENDING).createdAt(LocalDateTime.now()).build();
 
-    @Override
-    @Transactional
-    public ClientPaymentRequest acceptPaymentRequest(Long requestId, Long clientBankAccountId) {
-        ClientPaymentRequest req = requestRepo.findById(requestId)
-                .orElseThrow(() -> new NotFoundException("Payment request not found"));
+		return requestRepo.save(payementRequest);
+	}
 
-        BankAccount clientAcc = bankRepo.findById(clientBankAccountId)
-                .orElseThrow(() -> new NotFoundException("Client bank account not found"));
+	@Override
+	public List<ClientPaymentRequest> getPendingRequestsForClient(Long clientId) {
+		return requestRepo.findByClientIdAndStatus(clientId, PaymentStatus.PENDING);
+	}
 
-        BankAccount orgAcc = bankRepo.findByOrganizationId(req.getOrganization().getId())
-                .orElseThrow(() -> new NotFoundException("Organization bank account not found"));
+	@Override
+	@Transactional
+	public ClientPaymentRequest acceptPaymentRequest(Long requestId, Long clientBankAccountId) {
+		ClientPaymentRequest req = requestRepo.findById(requestId)
+				.orElseThrow(() -> new NotFoundException("Payment request not found"));
 
-        if (clientAcc.getBalance() < req.getAmount()) {
-            throw new InsufficientFundsException("Client has insufficient funds");
-        }
+		BankAccount clientAcc = bankRepo.findById(clientBankAccountId)
+				.orElseThrow(() -> new NotFoundException("Client bank account not found"));
 
-        clientAcc.setBalance(clientAcc.getBalance() - req.getAmount());
-        orgAcc.setBalance(orgAcc.getBalance() + req.getAmount());
+		BankAccount orgAcc = bankRepo.findByOrganizationId(req.getOrganization().getId())
+				.orElseThrow(() -> new NotFoundException("Organization bank account not found"));
 
-        bankRepo.save(clientAcc);
-        bankRepo.save(orgAcc);
+		if (clientAcc.getBalance() < req.getAmount()) {
+			throw new InsufficientFundsException("Client has insufficient funds");
+		}
 
-        req.setStatus(PaymentStatus.ACCEPTED);
-        req.setAcceptedAt(LocalDateTime.now());
+		clientAcc.setBalance(clientAcc.getBalance() - req.getAmount());
+		orgAcc.setBalance(orgAcc.getBalance() + req.getAmount());
 
-        return requestRepo.save(req);
-    }
+		bankRepo.save(clientAcc);
+		bankRepo.save(orgAcc);
 
-    @Override
-    public List<ClientPaymentRequest> getPaymentHistoryForClient(Long clientId,
-                                                                  LocalDateTime startDate,
-                                                                  LocalDateTime endDate,
-                                                                  PaymentStatus status) {
+		req.setStatus(PaymentStatus.ACCEPTED);
+		req.setAcceptedAt(LocalDateTime.now());
 
-        if (startDate != null && endDate != null && status != null) {
-            return requestRepo.findByClientIdAndStatusAndCreatedAtBetween(clientId, status, startDate, endDate);
-        } else if (startDate != null && endDate != null) {
-            return requestRepo.findByClientIdAndCreatedAtBetween(clientId, startDate, endDate);
-        } else if (startDate != null) {
-            return requestRepo.findByClientIdAndCreatedAtAfter(clientId, startDate);
-        } else if (endDate != null) {
-            return requestRepo.findByClientIdAndCreatedAtBefore(clientId, endDate);
-        } else if (status != null) {
-            return requestRepo.findByClientIdAndStatus(clientId, status);
-        } else {
-            return requestRepo.findByClientId(clientId);
-        }
-    }
-    
-    @Override
-    @Transactional
-    public ClientPaymentRequest rejectPaymentRequest(Long requestId) {
-        ClientPaymentRequest request = requestRepo.findById(requestId)
-                .orElseThrow(() -> new NotFoundException("Payment request not found"));
+		return requestRepo.save(req);
+	}
 
-        request.setStatus(PaymentStatus.REJECTED);
-        request.setRejectedAt(LocalDateTime.now()); // optional, if you have a rejectedAt field
+	@Override
+	public List<ClientPaymentRequest> getPaymentHistoryForClient(Long clientId, LocalDateTime startDate,
+			LocalDateTime endDate, PaymentStatus status) {
 
-        return requestRepo.save(request);
-    }
+		if (startDate != null && endDate != null && status != null) {
+			return requestRepo.findByClientIdAndStatusAndCreatedAtBetween(clientId, status, startDate, endDate);
+		} else if (startDate != null && endDate != null) {
+			return requestRepo.findByClientIdAndCreatedAtBetween(clientId, startDate, endDate);
+		} else if (startDate != null) {
+			return requestRepo.findByClientIdAndCreatedAtAfter(clientId, startDate);
+		} else if (endDate != null) {
+			return requestRepo.findByClientIdAndCreatedAtBefore(clientId, endDate);
+		} else if (status != null) {
+			return requestRepo.findByClientIdAndStatus(clientId, status);
+		} else {
+			return requestRepo.findByClientId(clientId);
+		}
+	}
 
+	@Override
+	@Transactional
+	public ClientPaymentRequest rejectPaymentRequest(Long requestId) {
+		ClientPaymentRequest request = requestRepo.findById(requestId)
+				.orElseThrow(() -> new NotFoundException("Payment request not found"));
+
+		request.setStatus(PaymentStatus.REJECTED);
+		request.setRejectedAt(LocalDateTime.now()); // optional, if you have a rejectedAt field
+
+		return requestRepo.save(request);
+	}
 
 }

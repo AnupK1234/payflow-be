@@ -9,6 +9,8 @@ import com.payflow.app.repository.BankAccountRepository;
 import com.payflow.app.service.ClientPaymentRequestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -40,9 +42,8 @@ public class ClientPaymentRequestController {
     @Operation(summary = "Send a payment request to a client",
                description = "Allows an organization admin to send a payment request to a specific client.")
     public ResponseEntity<ClientPaymentRequest> sendPaymentRequest(
-            @RequestBody ClientPaymentRequestDTO requestDTO,
-            @RequestParam Long orgId) {
-        return ResponseEntity.ok(requestService.sendPaymentRequest(requestDTO, orgId));
+            @RequestBody ClientPaymentRequestDTO requestDTO, HttpServletRequest request) {
+        return ResponseEntity.ok(requestService.sendPaymentRequest(requestDTO, request));
     }
 
    
