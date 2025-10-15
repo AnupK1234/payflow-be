@@ -6,10 +6,12 @@ import com.payflow.app.entity.ClientPaymentRequest;
 import com.payflow.app.enums.PaymentStatus;
 import com.payflow.app.enums.Role;
 import com.payflow.app.repository.BankAccountRepository;
+import com.payflow.app.security.util.CurrentUserUtil;
 import com.payflow.app.service.ClientPaymentRequestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -20,21 +22,15 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/api/payment-requests")
+@RequiredArgsConstructor
 @Tag(name = "Client Payment Requests", description = "APIs for managing client payment requests and approvals")
 public class ClientPaymentRequestController {
 
     private final ClientPaymentRequestService requestService;
     private final BankAccountRepository bankAccountRepository;
-
-    public ClientPaymentRequestController(
-            @Qualifier("clientPaymentRequestService") ClientPaymentRequestService requestService,
-            BankAccountRepository bankAccountRepository) {
-        this.requestService = requestService;
-        this.bankAccountRepository = bankAccountRepository;
-    }
+    private final CurrentUserUtil currentUserUtil;
 
     
     @PostMapping("/send")
@@ -46,15 +42,16 @@ public class ClientPaymentRequestController {
         return ResponseEntity.ok(requestService.sendPaymentRequest(requestDTO, request));
     }
 
-   
-    @GetMapping("/client/{clientId}/pending")
-    @PreAuthorize("hasAnyAuthority('CLIENT','ORG_ADMIN')")
+    
+    @GetMapping("/client/pending")
+    @PreAuthorize("hasAuthority('CLIENT')")
     @Operation(summary = "Get pending payment requests",
-               description = "Retrieve all pending payment requests for a client.")
-    public ResponseEntity<List<ClientPaymentRequest>> getPendingRequests(@PathVariable Long clientId) {
-        return ResponseEntity.ok(requestService.getPendingRequestsForClient(clientId));
+               description = "Retrieve all pending payment requests for the currently logged-in client.")
+    public ResponseEntity<List<ClientPaymentRequest>> getPendingRequests(HttpServletRequest request) {
+        return ResponseEntity.ok(requestService.getPendingRequestsForClient(request));
     }
 
+   
     @PostMapping("/{requestId}/accept/{clientBankAccountId}")
     @PreAuthorize("hasAuthority('CLIENT')")
     @Operation(summary = "Accept a payment request",
@@ -65,25 +62,36 @@ public class ClientPaymentRequestController {
         return ResponseEntity.ok(requestService.acceptPaymentRequest(requestId, clientBankAccountId));
     }
 
-    
-    @GetMapping("/client/{clientId}/history")
-    @PreAuthorize("hasAnyAuthority('CLIENT','ORG_ADMIN')")
-    @Operation(summary = "Get client payment history",
-               description = "Retrieves client payment history with optional filters.")
-    public ResponseEntity<List<ClientPaymentRequest>> getPaymentHistory(
-            @PathVariable Long clientId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-            @RequestParam(required = false) PaymentStatus status) {
-        return ResponseEntity.ok(requestService.getPaymentHistoryForClient(clientId, startDate, endDate, status));
+   
+    @PostMapping("/{requestId}/reject")
+    @PreAuthorize("hasAuthority('CLIENT')")
+    @Operation(summary = "Reject a payment request",
+               description = "Client rejects a payment request by providing request ID.")
+    public ResponseEntity<ClientPaymentRequest> rejectRequest(@PathVariable Long requestId) {
+        return ResponseEntity.ok(requestService.rejectPaymentRequest(requestId));
     }
 
    
-    @GetMapping("/client/{clientId}/bank-accounts")
+    @GetMapping("/history")
+    @PreAuthorize("hasAnyAuthority('CLIENT','ORG_ADMIN')")
+    @Operation(summary = "Get payment history",
+               description = "Retrieves payment history for the logged-in user (client or organization) with optional filters.")
+    public ResponseEntity<List<ClientPaymentRequest>> getPaymentHistory(
+            HttpServletRequest request,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(required = false) PaymentStatus status) {
+        return ResponseEntity.ok(requestService.getPaymentHistoryForCurrentUser(request, startDate, endDate, status));
+    }
+
+   
+    @GetMapping("/client/bank-accounts")
     @PreAuthorize("hasAuthority('CLIENT')")
     @Operation(summary = "Get client's active bank accounts",
-               description = "Fetch all active bank accounts associated with a client.")
-    public ResponseEntity<List<BankAccount>> getClientBankAccounts(@PathVariable Long clientId) {
+               description = "Fetch all active bank accounts associated with the currently logged-in client.")
+    public ResponseEntity<List<BankAccount>> getClientBankAccounts(HttpServletRequest request) {
+       
+        Long clientId = currentUserUtil.getCurrentUser(request).getClientId();
         
         List<BankAccount> accounts = bankAccountRepository
                 .findAllByClientIdAndOwnerTypeAndStatusIgnoreCase(clientId, Role.CLIENT, "ACTIVE");
@@ -96,13 +104,4 @@ public class ClientPaymentRequestController {
 
         return ResponseEntity.ok(accounts);
     }
-    
-    @PostMapping("/{requestId}/reject")
-    @PreAuthorize("hasAuthority('CLIENT')")
-    @Operation(summary = "Reject a payment request",
-               description = "Client rejects a payment request by providing request ID.")
-    public ResponseEntity<ClientPaymentRequest> rejectRequest(@PathVariable Long requestId) {
-        return ResponseEntity.ok(requestService.rejectPaymentRequest(requestId));
-    }
-
 }
