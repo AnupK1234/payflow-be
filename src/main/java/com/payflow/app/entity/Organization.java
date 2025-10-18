@@ -40,7 +40,7 @@ public class Organization {
     @Column(nullable = false, unique = true)
     private String registrationNumber;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String address;
 
     @Enumerated(EnumType.STRING)

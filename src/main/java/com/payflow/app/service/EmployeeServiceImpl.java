@@ -1,5 +1,6 @@
 package com.payflow.app.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -150,8 +151,26 @@ public class EmployeeServiceImpl implements EmployeeService {
 				.orElseThrow(() -> new NotFoundException("Employee not found with id: " + employeeId));
 
 		salaryStructureRepository.deactivateCurrentStructuresForEmployee(employeeId);
+		
+		BigDecimal basic = req.getBasic();
+	    BigDecimal hra = basic.multiply(BigDecimal.valueOf(0.25)); // 25%
+	    BigDecimal da = basic.multiply(BigDecimal.valueOf(0.15));  // 15%
+	    BigDecimal pf = basic.multiply(BigDecimal.valueOf(0.10));  // 10%
+	    
+	    BigDecimal netSalary = basic.add(hra).add(da).subtract(pf);
 
-		EmployeeSalaryStructure structure = modelMapper.map(req, EmployeeSalaryStructure.class);
+	    EmployeeSalaryStructure structure = EmployeeSalaryStructure.builder()
+	            .employee(employee)
+	            .effectiveFrom(req.getEffectiveFrom())
+	            .effectiveTo(req.getEffectiveTo())
+	            .basic(basic)
+	            .hra(hra)
+	            .da(da)
+	            .pf(pf)
+	            .isCurrent(Boolean.TRUE)
+	            .netSalary(netSalary)
+	            .build();
+	    
 		structure.setEmployee(employee);
 		structure.setIsCurrent(Boolean.TRUE);
 
