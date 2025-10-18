@@ -23,11 +23,12 @@ public class EmployeeSalaryStructureResponseDTO {
     private BigDecimal hra;  
     private BigDecimal da;    
     private BigDecimal pf;    
-    private String otherAllowances; 
 
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
     private Boolean isCurrent;
+    private BigDecimal netSalary;
+
     
 
     public String getMonth() {
@@ -38,26 +39,8 @@ public class EmployeeSalaryStructureResponseDTO {
         return effectiveFrom != null ? effectiveFrom.getYear() : 0;
     }
 
-    public BigDecimal getAllowances() {
-        try {
-            return otherAllowances != null && !otherAllowances.isEmpty() 
-                   ? new BigDecimal(otherAllowances) : BigDecimal.ZERO;
-        } catch (NumberFormatException e) {
-            return BigDecimal.ZERO;
-        }
-    }
-
     public BigDecimal getDeductions() {
         return pf != null ? pf : BigDecimal.ZERO;
     }
 
-    public BigDecimal getNetSalary() {
-        BigDecimal total = BigDecimal.ZERO;
-        if (basic != null) total = total.add(basic);
-        if (hra != null) total = total.add(hra);
-        if (da != null) total = total.add(da);
-        total = total.add(getAllowances());
-        total = total.subtract(getDeductions());
-        return total;
-    }
 }

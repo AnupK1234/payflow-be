@@ -139,8 +139,6 @@ public class EmployeeSelfServiceImpl implements EmployeeSelfService {
 				table.addCell(new Cell().add(new Paragraph(String.valueOf(s.getPf()))));
 
 				table.addCell(new Cell().add(new Paragraph("Other Allowances").setBold()));
-				table.addCell(
-						new Cell().add(new Paragraph(s.getOtherAllowances() != null ? s.getOtherAllowances() : "-")));
 
 				table.addCell(new Cell().add(new Paragraph("Net Salary").setBold()));
 				table.addCell(new Cell().add(new Paragraph(String.valueOf(s.getNetSalary()))));
@@ -218,7 +216,6 @@ public class EmployeeSelfServiceImpl implements EmployeeSelfService {
 	            sb.append(s.getHra()).append(",");
 	            sb.append(s.getDa()).append(",");
 	            sb.append(s.getPf()).append(",");
-	            sb.append(s.getOtherAllowances() != null ? s.getOtherAllowances() : "-").append(",");
 	            sb.append(s.getNetSalary()).append(",");
 	            sb.append((s.getIsCurrent() != null && s.getIsCurrent()) ? "Yes" : "No").append("\n");
 	        }

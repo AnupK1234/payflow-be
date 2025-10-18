@@ -14,9 +14,4 @@ public class EmployeeSalaryStructureRequestDTO {
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
     private BigDecimal basic;
-    private BigDecimal hra;
-    private BigDecimal da;
-    private BigDecimal pf;
-    private String otherAllowances;
-    private Boolean isCurrent;
 }

@@ -42,6 +42,9 @@ public class EmployeeSalaryStructure {
     @NotNull
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal pf;   
+    
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal netSalary;
 
     @Column(columnDefinition = "TEXT")
     private String otherAllowances;   
