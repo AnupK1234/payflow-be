@@ -41,8 +41,8 @@ public class EmployeeController {
 	@PostMapping
 	@PreAuthorize("hasAuthority('ORG_ADMIN')")
 	@Operation(summary = "Create a new employee", description = "Allows an ORG_ADMIN to create a new employee by providing their personal and organizational details.")
-	public ResponseEntity<EmployeeResponseDTO> create(@Valid @RequestBody CreateEmployeeRequestDTO req) {
-		return ResponseEntity.ok(employeeService.createEmployee(req));
+	public ResponseEntity<EmployeeResponseDTO> create(@Valid @RequestBody CreateEmployeeRequestDTO req, HttpServletRequest request) {
+		return ResponseEntity.ok(employeeService.createEmployee(req, request));
 	}
 
 	@GetMapping
