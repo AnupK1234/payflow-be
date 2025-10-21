@@ -59,13 +59,16 @@ public class EmployeeServiceImpl implements EmployeeService {
 	// Employee CRUD
 	@Override
 
-	public EmployeeResponseDTO createEmployee(CreateEmployeeRequestDTO req) {
+	public EmployeeResponseDTO createEmployee(CreateEmployeeRequestDTO req, HttpServletRequest request) {
+		UserResponse currentUser = currentUserUtil.getCurrentUser(request);
+		Long organizationId = currentUser.getOrganizationId();
+
 		// 1️⃣ Map EmployeeRequestDTO to Employee
 		Employee employee = modelMapper.map(req, Employee.class);
 		employee.setId(null);
 
-		Organization org = organizationRepository.findById(req.getOrganizationId())
-				.orElseThrow(() -> new NotFoundException("Organization not found with id: " + req.getOrganizationId()));
+		Organization org = organizationRepository.findById(organizationId)
+				.orElseThrow(() -> new NotFoundException("Organization not found with id: " + organizationId));
 		employee.setOrganization(org);
 
 		if (req.getBankAccount() != null) {
@@ -76,6 +79,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 		}
 
 		employee = employeeRepository.save(employee);
+
+		EmployeeSalaryStructureRequestDTO salaryReq = EmployeeSalaryStructureRequestDTO.builder()
+				.basic(req.getBasicSalary()).effectiveFrom(LocalDate.now()).build();
+
+		addSalaryStructure(employee.getId(), salaryReq);
 
 		User user = User.builder().username(employee.getEmployeeCode()).email(employee.getEmail())
 				.passwordHash(encoder.encode(employee.getEmployeeCode() + "123")).role(Role.EMPLOYEE).employee(employee)
@@ -151,26 +159,18 @@ public class EmployeeServiceImpl implements EmployeeService {
 				.orElseThrow(() -> new NotFoundException("Employee not found with id: " + employeeId));
 
 		salaryStructureRepository.deactivateCurrentStructuresForEmployee(employeeId);
-		
-		BigDecimal basic = req.getBasic();
-	    BigDecimal hra = basic.multiply(BigDecimal.valueOf(0.25)); // 25%
-	    BigDecimal da = basic.multiply(BigDecimal.valueOf(0.15));  // 15%
-	    BigDecimal pf = basic.multiply(BigDecimal.valueOf(0.10));  // 10%
-	    
-	    BigDecimal netSalary = basic.add(hra).add(da).subtract(pf);
 
-	    EmployeeSalaryStructure structure = EmployeeSalaryStructure.builder()
-	            .employee(employee)
-	            .effectiveFrom(req.getEffectiveFrom())
-	            .effectiveTo(req.getEffectiveTo())
-	            .basic(basic)
-	            .hra(hra)
-	            .da(da)
-	            .pf(pf)
-	            .isCurrent(Boolean.TRUE)
-	            .netSalary(netSalary)
-	            .build();
-	    
+		BigDecimal basic = req.getBasic();
+		BigDecimal hra = basic.multiply(BigDecimal.valueOf(0.25)); // 25%
+		BigDecimal da = basic.multiply(BigDecimal.valueOf(0.15)); // 15%
+		BigDecimal pf = basic.multiply(BigDecimal.valueOf(0.10)); // 10%
+
+		BigDecimal netSalary = basic.add(hra).add(da).subtract(pf);
+
+		EmployeeSalaryStructure structure = EmployeeSalaryStructure.builder().employee(employee)
+				.effectiveFrom(req.getEffectiveFrom()).effectiveTo(req.getEffectiveTo()).basic(basic).hra(hra).da(da)
+				.pf(pf).isCurrent(Boolean.TRUE).netSalary(netSalary).build();
+
 		structure.setEmployee(employee);
 		structure.setIsCurrent(Boolean.TRUE);
 
@@ -291,18 +291,18 @@ public class EmployeeServiceImpl implements EmployeeService {
 		List<SalaryAccountUpdateRequest> requests = salaryAccountUpdateRequestRepository.findByOrg(org);
 
 		return requests.stream().map(req -> {
-	        SalaryAccountUpdateRequestResponseDTO dto = modelMapper.map(req,
-	                SalaryAccountUpdateRequestResponseDTO.class);
-	        if (req.getEmployee() != null) {
-	            dto.setEmployeeId(req.getEmployee().getId());
-	            dto.setEmployeeName(req.getEmployee().getFullName());
-	        }
-	        if (req.getOrg() != null) {
-	            dto.setOrgId(req.getOrg().getId());
-	            dto.setOrgName(req.getOrg().getName());
-	        }
-	        return dto;
-	    }).collect(Collectors.toList());
+			SalaryAccountUpdateRequestResponseDTO dto = modelMapper.map(req,
+					SalaryAccountUpdateRequestResponseDTO.class);
+			if (req.getEmployee() != null) {
+				dto.setEmployeeId(req.getEmployee().getId());
+				dto.setEmployeeName(req.getEmployee().getFullName());
+			}
+			if (req.getOrg() != null) {
+				dto.setOrgId(req.getOrg().getId());
+				dto.setOrgName(req.getOrg().getName());
+			}
+			return dto;
+		}).collect(Collectors.toList());
 	}
 
 }

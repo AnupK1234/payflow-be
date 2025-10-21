@@ -14,7 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public interface EmployeeService {
 
-	EmployeeResponseDTO createEmployee(CreateEmployeeRequestDTO req);
+	EmployeeResponseDTO createEmployee(CreateEmployeeRequestDTO req, HttpServletRequest request);
 
 	List<EmployeeResponseDTO> getAllEmployees();
 
