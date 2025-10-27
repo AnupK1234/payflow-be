@@ -14,4 +14,5 @@ public class EmployeeSalaryStructureRequestDTO {
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
     private BigDecimal basic;
+    private Boolean isCurrent;
 }

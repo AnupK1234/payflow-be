@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -49,7 +50,7 @@ public class EmployeeBatchController {
 	        summary = "Batch Process employee creation",
 	        description = "Input a csv file of employee data and the api creates the employee in db in batches"
 	    )
-	public ResponseEntity<String> importEmployees(@RequestParam("file") MultipartFile file,
+	public ResponseEntity<Map<String, String>> importEmployees(@RequestParam("file") MultipartFile file,
 			HttpServletRequest request) {
 		
 		UserResponse currentUser = user.getCurrentUser(request);
@@ -85,12 +86,12 @@ public class EmployeeBatchController {
 			// 3. Launch the Job
 			jobLauncher.run(importEmployeeJob, jobParameters);
 
-			return ResponseEntity.ok("Employee batch import job started successfully.");
+			return ResponseEntity.ok(Map.of("message", "Employee batch import job started successfully."));
 
 		} catch (Exception e) {
 			log.error("Batch import failed", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("Employee batch import failed: " + e.getMessage());
+					.body(Map.of("message", "Employee batch import failed: " + e.getMessage()));
 		} finally {
 			// 4. Clean up the temporary file (important!)
 			if (tempFilePath != null) {
