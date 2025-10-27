@@ -1,8 +1,12 @@
 package com.payflow.app.batch;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -10,6 +14,7 @@ import org.springframework.stereotype.Component;
 import com.payflow.app.dto.request.CreateEmployeeRequestDTO;
 import com.payflow.app.entity.BankAccount;
 import com.payflow.app.entity.Employee;
+import com.payflow.app.entity.EmployeeSalaryStructure;
 import com.payflow.app.entity.Organization;
 import com.payflow.app.entity.User;
 import com.payflow.app.enums.Role;
@@ -26,6 +31,18 @@ public class EmployeeItemProcessor implements ItemProcessor<CreateEmployeeReques
 	private final BCryptPasswordEncoder encoder;
 	private final ModelMapper modelMapper;
 
+	private Long organizationId; // Field to hold the organization ID injected from JobParameters
+	private Organization cachedOrganization;
+
+	@BeforeStep
+	public void beforeStep(StepExecution stepExecution) {
+		// Get the organizationId parameter passed from the controller via JobParameters
+		this.organizationId = stepExecution.getJobParameters().getLong("organizationId");
+		// Pre-fetch and cache the Organization entity since it's used for every
+		// employee
+		this.cachedOrganization = getOrganization(this.organizationId);
+	}
+
 	// In a real-world scenario, you might cache the organization lookup to reduce
 	// DB hits
 	// but for simplicity, we'll use findById here.
@@ -36,12 +53,13 @@ public class EmployeeItemProcessor implements ItemProcessor<CreateEmployeeReques
 
 	@Override
 	public Employee process(CreateEmployeeRequestDTO req) throws Exception {
+		Organization org = this.cachedOrganization;
+
 		// 1. Map DTO to Employee Entity
 		Employee employee = modelMapper.map(req, Employee.class);
 		employee.setId(null);
 
 		// 2. Set Organization (from DTO's organizationId)
-		Organization org = getOrganization(req.getOrganizationId());
 		employee.setOrganization(org);
 
 		// 3. Build and link User entity
@@ -49,30 +67,35 @@ public class EmployeeItemProcessor implements ItemProcessor<CreateEmployeeReques
 				.email(employee.getEmail()).passwordHash(encoder.encode(employee.getEmployeeCode() + "123")) // Default
 																												// password
 				.role(Role.EMPLOYEE).employee(employee) // Bi-directional link
-				.mustResetPassword(true).enabled(true)
-				// .organization(org) // Optional: Link User directly to Organization
-				.build();
+				.mustResetPassword(true).enabled(true).build();
 
 		employee.setUser(user); // Set bi-directional link
 		// Note: We don't save the User here; it will be saved in the Writer.
 
 		// 4. Handle Bank Account
 		if (req.getBankAccount() != null) {
-			BankAccount bankAccount = BankAccount.builder().employee(employee).organization(org) // Assuming BankAccount
-																									// links to
-																									// Organization as
-																									// well (from your
-																									// Organization
-																									// entity)
+			BankAccount bankAccount = BankAccount.builder().employee(employee).organization(org)
 					.ownerType(Role.EMPLOYEE).accountNumberEnc(req.getBankAccount().getAccountNumber())
 					.ifsc(req.getBankAccount().getIfsc()).status("ACTIVE").build();
 
 			employee.setBankAccounts(List.of(bankAccount));
-			// Set the bi-directional link from bankAccount back to employee's list
-			// employee.getBankAccounts().add(bankAccount);
 		}
 
-		// The result is an Employee entity ready for persistence
+		if (req.getSalaryStructure() != null) {
+			var s = req.getSalaryStructure();
+			var basic = req.getSalaryStructure().getBasic();
+			var hra = basic.multiply(BigDecimal.valueOf(0.25)); // 25%
+			var da = basic.multiply(BigDecimal.valueOf(0.15)); // 15%
+			var pf = basic.multiply(BigDecimal.valueOf(0.10)); // 10%
+			var net = basic.add(hra).add(da).subtract(pf);
+
+			EmployeeSalaryStructure structure = EmployeeSalaryStructure.builder()
+					.effectiveFrom(s.getEffectiveFrom() != null ? s.getEffectiveFrom() : LocalDate.now()).basic(basic)
+					.hra(hra).da(da).pf(pf).netSalary(net).isCurrent(true).employee(employee).build();
+
+			employee.setSalaryStructures(List.of(structure));
+		}
+
 		return employee;
 	}
 }

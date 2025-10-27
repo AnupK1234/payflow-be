@@ -46,6 +46,13 @@ public class BatchConfig {
 		reader.setLinesToSkip(1); // Skip the header row
 
 		reader.setLineMapper(employeeLineMapper());
+		
+		reader.setSkippedLinesCallback(line -> {
+	        if (line.trim().isEmpty()) {
+	            System.out.println("Skipping empty line...");
+	        }
+	    });
+		
 		return reader;
 	}
 
@@ -64,8 +71,8 @@ public class BatchConfig {
 		lineTokenizer.setDelimiter(","); // Change this to "\t" if your actual file uses tabs
 		lineTokenizer.setStrict(false);
 		lineTokenizer.setNames("fullName", "email", "employeeCode", "dateOfJoining", "jobTitle", "department", "status",
-				"aadhaarNumber", "panNumber", "organizationId", "bankAccount.accountNumber", "bankAccount.ifsc",
-				"bankAccount.status");
+				"aadhaarNumber", "panNumber","bankAccount.accountNumber", "bankAccount.ifsc",
+				"bankAccount.status", "basicSalary");
 
 		// 2. Field Set Mapper: Use the custom implementation
 		FieldSetMapper<CreateEmployeeRequestDTO> fieldSetMapper = new EmployeeFieldSetMapper();

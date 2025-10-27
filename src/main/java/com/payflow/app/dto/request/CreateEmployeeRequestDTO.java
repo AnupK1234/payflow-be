@@ -39,6 +39,8 @@ public class CreateEmployeeRequestDTO {
 	private String panNumber;
 
 	private BigDecimal basicSalary;
+	
+	private EmployeeSalaryStructureRequestDTO salaryStructure;
 
 	@Valid
 	private BankAccountRequestDTO bankAccount;
